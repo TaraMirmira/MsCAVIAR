@@ -73,12 +73,12 @@ public:
             importDataFirstColumn(z_file, temp_names);
             importDataSecondColumn(z_file, temp_z);
 
-            //FIX THE SIZE! IN CASE THE INPUT IS NOT 50*50
+            int numSnps = sqrt(temp_LD->size());
             mat temp_sig;
-            temp_sig = mat(50,50);
-            for (int i = 0; i <50; i++){
-                for (int j = 0; j<50; j++){
-                    temp_sig(i,j) = temp_LD->at(i * 50 + j);
+            temp_sig = mat(numSnps, numSnps);
+            for (int i = 0; i < numSnps; i++){
+                for (int j = 0; j< numSnps; j++){
+                    temp_sig(i,j) = temp_LD->at(i * numSnps + j);
                 }
             }
 
