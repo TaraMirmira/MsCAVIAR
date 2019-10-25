@@ -14,7 +14,7 @@
 
 #include <armadillo>
 
-#include "MPostCal.h"
+#include "MsPostCal.h"
 
 using namespace std;
 using namespace arma;

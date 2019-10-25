@@ -13,9 +13,9 @@
 #include <armadillo>
 #include <unistd.h>
 #include <vector>
-#include "MUtil.h"
-#include "MPostCal.h"
-#include "MCaviarModel.h"
+#include "MsUtil.h"
+#include "MsPostCal.h"
+#include "MsCaviarModel.h"
 
 using namespace std;
 

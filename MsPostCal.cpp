@@ -6,8 +6,8 @@
 #include <iomanip>
 #include <vector>
 #include <math.h>
-#include "MUtil.h"
-#include "MPostCal.h"
+#include "MsUtil.h"
+#include "MsPostCal.h"
 
 using namespace arma;
 
