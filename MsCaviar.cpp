@@ -57,7 +57,7 @@ int main( int argc, char *argv[]  ){
     string zFile  = "";
     string outputFileName = "";
 
-    while ((oc = getopt(argc, argv, "vhl:o:z:r:c:g:f:t:")) != -1) {
+    while ((oc = getopt(argc, argv, "vhl:o:z:r:c:g:f:t:s:")) != -1) {
         switch (oc) {
             case 'v':
                 cout << "Version 0.1\n" << endl;
