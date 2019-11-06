@@ -100,6 +100,7 @@ public:
             }
         }
 
+        /* NCP is set to max(5.2, max(abs(z-score)))
         for(int i = 0 ; i < num_of_studies; i++){
             for (int j = 0; j < snpCount; j++){
                 if(abs(S_LONG_VEC.at(i*snpCount + j)) > NCP){
@@ -107,6 +108,7 @@ public:
                 }
             }
         }
+         */
 
         for (int i = 0; i < sigma->size(); i++){
             makeSigmaPositiveSemiDefinite(&(sigma->at(i)), snpCount);
