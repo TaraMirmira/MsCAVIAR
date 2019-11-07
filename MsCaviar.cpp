@@ -104,6 +104,7 @@ int main( int argc, char *argv[]  ){
                 break;
             case 's':
                 sigma_g_squared = atof(optarg);
+                NCP = sigma_g_squared;
                 break;
 
             case ':':
