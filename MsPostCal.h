@@ -109,7 +109,7 @@ public:
      compute likelihood of each configuration by Woodbury
      :param configure the causal status vector of 0 and 1
      :param stat the z-score of each snp
-     :param NCP the non-centrality param, set to higher of 5.2 or the highest z_score of all snps in all studies
+     :param NCP the non-centrality param
      :return likelihood of the configuration
      */
     double likelihood(vector<int> configure, vector<double> * stat, double NCP) ;
