@@ -86,6 +86,7 @@ public:
             for (int j = 0; j < snpCount * num_of_studies; j++) {
                 //sigmaMatrix(i,j) = (*BIG_SIGMA)(i,j) + distribution(generator) * 0.005; // add epsilon to SIGMA
                 sigmaMatrix(i,j) = (*BIG_SIGMA)(i,j);
+                // cout << sigmaMatrix(i,j) << "/";
             }
         }
         invSigmaMatrix = inv(sigmaMatrix);
@@ -109,10 +110,10 @@ public:
      compute likelihood of each configuration by Woodbury
      :param configure the causal status vector of 0 and 1
      :param stat the z-score of each snp
-     :param NCP the non-centrality param
+     :param sigma_g_squared the non-centrality param
      :return likelihood of the configuration
      */
-    double likelihood(vector<int> configure, vector<double> * stat, double NCP) ;
+    double likelihood(vector<int> configure, vector<double> * stat, double sigma_g_squared) ;
 
     /*
      find the next binary configuration based on the previous config and size of vector
@@ -120,16 +121,16 @@ public:
     int nextBinary(vector<int>& data, int size) ;
 
     /*
-     find the total likelihood given the z_score and NCP
+     find the total likelihood given the z_score and sigma_g_squared
      */
-    double computeTotalLikelihood(vector<double> * stat, double NCP) ;
+    double computeTotalLikelihood(vector<double> * stat, double sigma_g_squared) ;
 
     /*
      greedy algorithm to find minimal set
      @param stat is the z-scpres
      @param sigma is the correaltion matrix
      */
-    double findOptimalSetGreedy(vector<double> * stat, double NCP, vector<char> * pcausalSet, vector<int> *rank,  double inputRho, string outputFileName);
+    double findOptimalSetGreedy(vector<double> * stat, double sigma_g_squared, vector<char> * pcausalSet, vector<int> *rank,  double inputRho, string outputFileName);
 
     /*
      print the hist file, which is the likelihood of the set containing 0, 1, 2... up to the number of max snps

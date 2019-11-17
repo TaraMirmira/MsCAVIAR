@@ -45,7 +45,7 @@ vector<string> read_dir(string fileName){
 
 int main( int argc, char *argv[]  ){
     int totalCausalSNP = 2;
-    double NCP = 5.2;
+    // double NCP = 5.2;
     double gamma = 0.01;
     double rho = 0.95;
     bool histFlag = false;
@@ -104,7 +104,7 @@ int main( int argc, char *argv[]  ){
                 break;
             case 's':
                 sigma_g_squared = atof(optarg);
-                NCP = sigma_g_squared;
+                // NCP = sigma_g_squared;
                 break;
 
             case ':':
@@ -127,7 +127,7 @@ int main( int argc, char *argv[]  ){
         return 0;
     }
 
-    MCaviarModel Mcaviar(ldDir, zDir, outputFileName, totalCausalSNP, NCP, rho, histFlag, gamma, tau_sqr, sigma_g_squared);
+    MCaviarModel Mcaviar(ldDir, zDir, outputFileName, totalCausalSNP, rho, histFlag, gamma, tau_sqr, sigma_g_squared);
     Mcaviar.run();
     Mcaviar.finishUp();
     return 0;

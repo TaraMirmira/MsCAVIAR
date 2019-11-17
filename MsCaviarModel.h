@@ -22,7 +22,6 @@ using namespace arma;
 class MCaviarModel{
 public:
     double rho;
-    double NCP;
     double gamma;
     int snpCount;
     int totalCausalSNP;
@@ -44,9 +43,8 @@ public:
     /*
      consrtuctor for MCaviarModel
      */
-    MCaviarModel(vector<string> ldDir, vector<string> zDir, string outputFileName, int totalCausalSNP, double NCP, double rho, bool histFlag, double gamma=0.01, double tau_sqr = 0.2, double sigma_g_squared = 5.2) {
+    MCaviarModel(vector<string> ldDir, vector<string> zDir, string outputFileName, int totalCausalSNP, double rho, bool histFlag, double gamma=0.01, double tau_sqr = 0.2, double sigma_g_squared = 5.2) {
         this->histFlag = histFlag;
-        this->NCP = NCP;
         this->rho = rho;
         this->gamma = gamma;
         this->ldDir = ldDir;
@@ -100,11 +98,11 @@ public:
             }
         }
 
-        /* NCP is set to max(5.2, max(abs(z-score)))
+        /* sigma_g_squared is set to max(5.2, max(abs(z-score)))
         for(int i = 0 ; i < num_of_studies; i++){
             for (int j = 0; j < snpCount; j++){
-                if(abs(S_LONG_VEC.at(i*snpCount + j)) > NCP){
-                    NCP = abs(S_LONG_VEC.at(i*snpCount + j));
+                if(abs(S_LONG_VEC.at(i*snpCount + j)) > sigma_g_squared){
+                    sigma_g_squared = abs(S_LONG_VEC.at(i*snpCount + j));
                 }
             }
         }
@@ -131,7 +129,7 @@ public:
      @return no return
      */
     void run() {
-        post->findOptimalSetGreedy(&S_LONG_VEC, NCP, pcausalSet, rank, rho, outputFileName);
+        post->findOptimalSetGreedy(&S_LONG_VEC, sigma_g_squared, pcausalSet, rank, rho, outputFileName);
     }
 
     /*

@@ -25,7 +25,7 @@ mat MPostCal::construct_diagC(vector<int> configure) {
     return diagC;
 }
 
-double MPostCal::likelihood(vector<int> configure, vector<double> * stat, double NCP) {
+double MPostCal::likelihood(vector<int> configure, vector<double> * stat, double sigma_g_squared) {
     int causalCount = 0;
     double matDet   = 0;
     double res      = 0;
@@ -61,8 +61,9 @@ double MPostCal::likelihood(vector<int> configure, vector<double> * stat, double
     mat V(causalCount * num_of_studies, snpCount * num_of_studies, fill::zeros);
     for (int i = 0; i < snpCount * num_of_studies; i++) {
         if (configure[i] == 1) {
-            for (int j = 0; j < snpCount * num_of_studies; j++)
+            for (int j = 0; j < snpCount * num_of_studies; j++) {
                 V(index_C, j) = sigmaMatrixTran(i, j);
+            }
             index_C ++;
         }
     }
@@ -78,6 +79,7 @@ double MPostCal::likelihood(vector<int> configure, vector<double> * stat, double
 
     mat temp1 = invSigmaMatrix * V;
     mat temp2 = temp1 * pinv(tmp_CC);
+
     mat tmp_AA = invSigmaMatrix - temp2 * U ;
 
     mat tmpResultMatrix1N = statMatrixtTran * tmp_AA;
@@ -94,6 +96,7 @@ double MPostCal::likelihood(vector<int> configure, vector<double> * stat, double
      */
     double tmplogDet = log(sqrt(abs(matDet)));
     double tmpFinalRes = -res/2 - tmplogDet;
+
     return tmpFinalRes;
 }
 
@@ -154,7 +157,7 @@ int MPostCal::nextBinary(vector<int>& data, int size) {
     return(total_one);
 }
 
-double MPostCal::computeTotalLikelihood(vector<double>* stat, double NCP) {
+double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squared) {
     int num = 0;
     double sumLikelihood = 0;
     double tmp_likelihood = 0;
@@ -176,7 +179,7 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double NCP) {
     }
 
     for(long int i = 0; i < total_iteration; i++) {
-        tmp_likelihood = likelihood(tempConfigure, stat, NCP) + num * log(gamma) + (snpCount-num) * log(1-gamma);
+        tmp_likelihood = likelihood(tempConfigure, stat, sigma_g_squared) + num * log(gamma) + (snpCount-num) * log(1-gamma);
         sumLikelihood = addlogSpace(sumLikelihood, tmp_likelihood);
 
         for(int j = 0; j < snpCount; j++) {
@@ -203,12 +206,12 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double NCP) {
 }
 
 
-double MPostCal::findOptimalSetGreedy(vector<double> * stat, double NCP, vector<char> * pcausalSet, vector<int> * rank,  double inputRho, string outputFileName) {
+double MPostCal::findOptimalSetGreedy(vector<double> * stat, double sigma_g_squared, vector<char> * pcausalSet, vector<int> * rank,  double inputRho, string outputFileName) {
     int index = 0;
     double rho = double(0);
     double total_post = double(0);
 
-    totalLikeLihoodLOG = computeTotalLikelihood(stat, NCP);
+    totalLikeLihoodLOG = computeTotalLikelihood(stat, sigma_g_squared);
 
     export2File(outputFileName+"_log.txt", exp(totalLikeLihoodLOG)); //Output the total likelihood to the log File
     for(int i = 0; i < snpCount; i++)
