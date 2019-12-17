@@ -2,6 +2,7 @@
 #include <fstream>
 #include <string>
 #include <cmath>
+#include <ctype.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,6 +43,27 @@ vector<string> read_dir(string fileName){
     return dirs;
 }
 
+vector<int> read_sigma(string sample_size) {
+    vector<int> sizes;
+    string current_size = "";
+    for (int i=0; i < sample_size.size(); i++) {
+        if (sample_size[i] == ',') {
+            sizes.push_back(stod(current_size)); // push back previous sample size
+            current_size = ""; // reset
+        }
+        else if (isdigit(sample_size[i])) {
+            current_size += sample_size[i];
+        }
+        else {
+            cout << "Error: sample size is not in the right format" << endl;
+            exit(1);
+        }
+    }
+    if (current_size != "") {
+        sizes.push_back(stod(current_size)); // push back last sample size
+    }
+    return sizes;
+}
 
 int main( int argc, char *argv[]  ){
     int totalCausalSNP = 2;
@@ -55,8 +77,9 @@ int main( int argc, char *argv[]  ){
     string ldFile = "";
     string zFile  = "";
     string outputFileName = "";
+    string sample_s = "";
 
-    while ((oc = getopt(argc, argv, "vhl:o:z:r:c:g:f:t:s:")) != -1) {
+    while ((oc = getopt(argc, argv, "vhl:o:z:r:c:g:f:t:s:n:")) != -1) {
         switch (oc) {
             case 'v':
                 cout << "Version 0.1\n" << endl;
@@ -72,6 +95,7 @@ int main( int argc, char *argv[]  ){
                 cout << "-f 1               to out the probaility of different number of causal SNP" << endl;
                 cout << "-t TAU_SQR, --tau_sqr=TAU_SQR  set the heterogeneity (t^2) across studies, default is 0.2" << endl;
                 cout << "-s SIGMA_G_SQR, --sigma_g_squared=SIGMA_G_SQR    set the heritability (sigma^2) of the trait, default is 5.2" << endl;
+                cout << "-n SAMPLE_SIZE, --sample_size    REQUIRED: set the sample sizes (integer) of individual studies, format: enter 50,100 for study 1 with 50 sample size and 2 with 100" << endl;
                 exit(0);
 
             // required options: LD and Z-score filenames, and output file name
@@ -84,7 +108,9 @@ int main( int argc, char *argv[]  ){
             case 'z':
                 zFile = string(optarg);
                 break;
-
+            case 'n':
+                sample_s = string(optarg);
+                break;
             // optional arguments: parameters for fine mapping
             case 'r':
                 rho = atof(optarg);
@@ -104,7 +130,6 @@ int main( int argc, char *argv[]  ){
             case 's':
                 sigma_g_squared = atof(optarg);
                 break;
-
             case ':':
             case '?':
             default:
@@ -112,20 +137,21 @@ int main( int argc, char *argv[]  ){
         }
     }
 
-    if (ldFile == "" or zFile == "" or outputFileName == "") {
-        cout << "Error: -l, -z, and -o are required" << endl;
+    if (ldFile == "" or zFile == "" or outputFileName == "" or sample_s == "") {
+        cout << "Error: -l, -z, -o, and -p are required" << endl;
         exit(1);
     }
 
     vector<string> ldDir = read_dir(ldFile);
     vector<string> zDir = read_dir(zFile);
+    vector<int> sample_sizes = read_sigma(sample_s);
 
-    if(ldDir.size() != zDir.size()) {
-        cout << "Error: LD files and Z files do not match in number" << endl;
-        return 0;
+    if (ldDir.size() != zDir.size() || ldDir.size() != sample_sizes.size()) {
+        cout << "Error: LD files, Z files, and sample sizes do not match in number" << endl;
+        exit(1);
     }
 
-    MCaviarModel Mcaviar(ldDir, zDir, outputFileName, totalCausalSNP, rho, histFlag, gamma, tau_sqr, sigma_g_squared);
+    MCaviarModel Mcaviar(ldDir, zDir, sample_sizes, outputFileName, totalCausalSNP, rho, histFlag, gamma, tau_sqr, sigma_g_squared);
     Mcaviar.run();
     Mcaviar.finishUp();
     return 0;

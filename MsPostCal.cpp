@@ -11,11 +11,37 @@
 
 using namespace arma;
 
+// deprecated, uncalibrated
+//mat MPostCal::construct_diagC(vector<int> configure) {
+//    mat Identity_M = mat(num_of_studies, num_of_studies, fill::eye);
+//    mat Matrix_of_1 = mat(num_of_studies, num_of_studies);
+//    Matrix_of_1.fill(1);
+//    mat temp1 = t_squared * Identity_M + s_squared * Matrix_of_1;
+//    mat temp2 = mat(snpCount, snpCount, fill::zeros);
+//    for(int i = 0; i < snpCount; i++) {
+//        if (configure[i] == 1)
+//            temp2(i, i) = 1;
+//    }
+//    mat diagC = kron(temp1, temp2);
+//    return diagC;
+//}
+
+// calibrate sample size imbalance
 mat MPostCal::construct_diagC(vector<int> configure) {
     mat Identity_M = mat(num_of_studies, num_of_studies, fill::eye);
-    mat Matrix_of_1 = mat(num_of_studies, num_of_studies);
-    Matrix_of_1.fill(1);
-    mat temp1 = t_squared * Identity_M + s_squared * Matrix_of_1;
+    mat Matrix_of_sigmaG = mat(num_of_studies, num_of_studies);
+    int min_size = * std::min_element(sample_sizes.begin(), sample_sizes.end());
+
+    for (int i = 0; i < num_of_studies; i ++) {
+        for (int j = 0; j < num_of_studies; j ++) {
+            if (i == j)
+                Matrix_of_sigmaG(i, j) = s_squared * sqrt(sample_sizes[i] / min_size);
+            else
+                Matrix_of_sigmaG(i, j) = s_squared * sqrt(sample_sizes[i] * sample_sizes[j]) / min_size;
+        }
+    }
+    mat temp1 = t_squared * Identity_M + Matrix_of_sigmaG;
+    cout << temp1;
     mat temp2 = mat(snpCount, snpCount, fill::zeros);
     for(int i = 0; i < snpCount; i++) {
         if (configure[i] == 1)

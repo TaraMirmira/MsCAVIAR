@@ -34,6 +34,7 @@ public:
     vector< vector<string> > * snpNames;
     vector<string> ldDir;
     vector<string> zDir;
+    vector<int> sample_sizes;
     string outputFileName;
     double tau_sqr;
     double sigma_g_squared;
@@ -43,7 +44,7 @@ public:
     /*
      consrtuctor for MCaviarModel
      */
-    MCaviarModel(vector<string> ldDir, vector<string> zDir, string outputFileName, int totalCausalSNP, double rho, bool histFlag, double gamma=0.01, double tau_sqr = 0.2, double sigma_g_squared = 5.2) {
+    MCaviarModel(vector<string> ldDir, vector<string> zDir, vector<int> sample_sizes, string outputFileName, int totalCausalSNP, double rho, bool histFlag, double gamma=0.01, double tau_sqr = 0.2, double sigma_g_squared = 5.2) {
         this->histFlag = histFlag;
         this->rho = rho;
         this->gamma = gamma;
@@ -53,6 +54,7 @@ public:
         this->totalCausalSNP = totalCausalSNP;
         this->tau_sqr = tau_sqr;
         this->sigma_g_squared = sigma_g_squared;
+        this->sample_sizes = sample_sizes;
 
         //fileSize(ldFile, tmpSize);
         sigma      = new vector<mat>;
@@ -120,7 +122,7 @@ public:
             (*BIG_SIGMA) = (*BIG_SIGMA) + temp_sigma;
         }
 
-        post = new MPostCal(BIG_SIGMA, &S_LONG_VEC, snpCount, totalCausalSNP, snpNames, gamma, tau_sqr, sigma_g_squared, num_of_studies);
+        post = new MPostCal(BIG_SIGMA, &S_LONG_VEC, snpCount, totalCausalSNP, snpNames, gamma, tau_sqr, sigma_g_squared, num_of_studies, sample_sizes);
     }
 
     /*
