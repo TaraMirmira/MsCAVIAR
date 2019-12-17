@@ -41,7 +41,7 @@ mat MPostCal::construct_diagC(vector<int> configure) {
         }
     }
     mat temp1 = t_squared * Identity_M + Matrix_of_sigmaG;
-    cout << temp1;
+
     mat temp2 = mat(snpCount, snpCount, fill::zeros);
     for(int i = 0; i < snpCount; i++) {
         if (configure[i] == 1)
