@@ -94,7 +94,7 @@ int main( int argc, char *argv[]  ){
                 cout << "-c causal          set the maximum number of causal SNPs" << endl;
                 cout << "-f 1               to out the probaility of different number of causal SNP" << endl;
                 cout << "-t TAU_SQR, --tau_sqr=TAU_SQR  set the heterogeneity (t^2) across studies, default is 0.2" << endl;
-                cout << "-s SIGMA_G_SQR, --sigma_g_squared=SIGMA_G_SQR    set the heritability (sigma^2) of the trait, default is 5.2" << endl;
+                cout << "-s SIGMA_G_SQR, --sigma_g_squared=SIGMA_G_SQR    set the NCP variance for the smallest study, default is 5.2" << endl;
                 cout << "-n SAMPLE_SIZE, --sample_size    REQUIRED: set the sample sizes (integer) of individual studies, format: enter 50,100 for study 1 with 50 sample size and 2 with 100" << endl;
                 exit(0);
 
@@ -138,7 +138,7 @@ int main( int argc, char *argv[]  ){
     }
 
     if (ldFile == "" or zFile == "" or outputFileName == "" or sample_s == "") {
-        cout << "Error: -l, -z, -o, and -p are required" << endl;
+        cout << "Error: -l, -z, -o, and -n are required" << endl;
         exit(1);
     }
 
