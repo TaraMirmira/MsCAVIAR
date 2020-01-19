@@ -11,22 +11,23 @@
 
 using namespace arma;
 
-// deprecated, uncalibrated
-//mat MPostCal::construct_diagC(vector<int> configure) {
-//    mat Identity_M = mat(num_of_studies, num_of_studies, fill::eye);
-//    mat Matrix_of_1 = mat(num_of_studies, num_of_studies);
-//    Matrix_of_1.fill(1);
-//    mat temp1 = t_squared * Identity_M + s_squared * Matrix_of_1;
-//    mat temp2 = mat(snpCount, snpCount, fill::zeros);
-//    for(int i = 0; i < snpCount; i++) {
-//        if (configure[i] == 1)
-//            temp2(i, i) = 1;
-//    }
-//    mat diagC = kron(temp1, temp2);
-//    return diagC;
-//}
+/* deprecated, uncalibrated
+mat MPostCal::construct_diagC(vector<int> configure) {
+    mat Identity_M = mat(num_of_studies, num_of_studies, fill::eye);
+    mat Matrix_of_1 = mat(num_of_studies, num_of_studies);
+    Matrix_of_1.fill(1);
+    mat temp1 = t_squared * Identity_M + s_squared * Matrix_of_1;
+    mat temp2 = mat(snpCount, snpCount, fill::zeros);
+    for(int i = 0; i < snpCount; i++) {
+        if (configure[i] == 1)
+            temp2(i, i) = 1;
+    }
+    mat diagC = kron(temp1, temp2);
+    return diagC;
+}
+ */
 
-// calibrate sample size imbalance
+// calibrate for sample size imbalance
 mat MPostCal::construct_diagC(vector<int> configure) {
     mat Identity_M = mat(num_of_studies, num_of_studies, fill::eye);
     mat Matrix_of_sigmaG = mat(num_of_studies, num_of_studies);
@@ -34,12 +35,13 @@ mat MPostCal::construct_diagC(vector<int> configure) {
 
     for (int i = 0; i < num_of_studies; i ++) {
         for (int j = 0; j < num_of_studies; j ++) {
-            if (i == j)
-                Matrix_of_sigmaG(i, j) = s_squared * sqrt(sample_sizes[i] / min_size);
-            else
+            if (i == j) // diagonal: scaled variance
+                Matrix_of_sigmaG(i, j) = s_squared * (sample_sizes[i] / min_size);
+            else // off-diagonal: covariance
                 Matrix_of_sigmaG(i, j) = s_squared * sqrt(sample_sizes[i] * sample_sizes[j]) / min_size;
         }
     }
+    
     mat temp1 = t_squared * Identity_M + Matrix_of_sigmaG;
 
     mat temp2 = mat(snpCount, snpCount, fill::zeros);
@@ -48,6 +50,7 @@ mat MPostCal::construct_diagC(vector<int> configure) {
             temp2(i, i) = 1;
     }
     mat diagC = kron(temp1, temp2);
+    
     return diagC;
 }
 
@@ -72,6 +75,7 @@ double MPostCal::likelihood(vector<int> configure, vector<double> * stat, double
     mat sigmaMatrixTran = sigmaMatrix.t();
 
     // U is kn by mn matrix of columns corresponding to causal SNP in sigmacC
+    // In unequal sample size studies, U is adjusted for the sample sizes
     mat U(causalCount * num_of_studies, snpCount * num_of_studies, fill::zeros);
     for (int i = 0; i < snpCount * num_of_studies; i++) {
         if (configure[i] == 1) {
@@ -81,9 +85,11 @@ double MPostCal::likelihood(vector<int> configure, vector<double> * stat, double
             index_C ++;
         }
     }
-
+    
     index_C = 0;
+    
     // V is mn by kn matrix of rows corresponding to causal SNP in sigma
+    // In unequal sample size studies, V does not change
     mat V(causalCount * num_of_studies, snpCount * num_of_studies, fill::zeros);
     for (int i = 0; i < snpCount * num_of_studies; i++) {
         if (configure[i] == 1) {
@@ -228,6 +234,7 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 
     for(int i = 0; i <= maxCausalSNP; i++)
         histValues[i] = exp(histValues[i]-sumLikelihood);
+    
     return(sumLikelihood);
 }
 

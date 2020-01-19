@@ -48,6 +48,7 @@ private:
         double base = max(a,b);
         if (base - min(a,b) > 700)
             return base;
+        
         return(base + log(1+exp(min(a,b)-base)));
     }
 
@@ -72,23 +73,21 @@ public:
         this-> num_of_studies = num_of_studies;
         this-> sample_sizes = sample_sizes;
 
-        // statMatrix is now an m by n matrix, m = number of snps, n = num of studies
-        // statMatrix is the z-score matrix of mn*1
+        // statMatrix is the z-score matrix of mn*1, m = number of snps, n = num of studies
         statMatrix = mat (snpCount * num_of_studies, 1);
         statMatrixtTran = mat (1, snpCount * num_of_studies);
         for(int i = 0; i < snpCount * num_of_studies; i++) {
             statMatrix(i,0) = (*S_LONG_VEC)[i];
             statMatrixtTran(0,i) = (*S_LONG_VEC)[i];
         }
-        // sigmaMatrix now an array of sigma matrices for each study i, same for invSigmaMatrix, sigmaDet
+        // sigmaMatrix is an array of sigma matrices for each study i, same for invSigmaMatrix, sigmaDet
         sigmaMatrix = mat (snpCount * num_of_studies, snpCount * num_of_studies);
-        //std::default_random_engine generator;
-        //std::normal_distribution<double> distribution(0, 1);
+        std::default_random_engine generator;
+        std::normal_distribution<double> distribution(0, 1);
         for(int i = 0; i < snpCount * num_of_studies; i++) {
             for (int j = 0; j < snpCount * num_of_studies; j++) {
-                //sigmaMatrix(i,j) = (*BIG_SIGMA)(i,j) + distribution(generator) * 0.005; // add epsilon to SIGMA
+                sigmaMatrix(i,j) = (*BIG_SIGMA)(i,j) + distribution(generator) * 0.005; // add epsilon to SIGMA
                 sigmaMatrix(i,j) = (*BIG_SIGMA)(i,j);
-                // cout << sigmaMatrix(i,j) << "/";
             }
         }
         invSigmaMatrix = inv(sigmaMatrix);
