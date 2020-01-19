@@ -1,0 +1,2 @@
+study_bbj_t2d_sumstats_reformatted.ld
+study_ukb_t2d_sumstats_reformatted.ld

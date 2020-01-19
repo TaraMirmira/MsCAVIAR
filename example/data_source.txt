@@ -1,0 +1,15 @@
+This locus was prepared using publicly available type 2 diabetes summary statistics data from Biobank Japan (BBJ) and the UK Biobank (UKB). We would like to thank the people who made these datasets available and the authors of the corresponding papers.
+
+Biobank Japan data website:
+http://jenger.riken.jp/en/result
+
+UK Biobank data website:
+http://www.nealelab.is/uk-biobank
+
+Biobank Japan paper:
+Suzuki K, Akiyama M, Ishigaki K, Kanai M, Hosoe J, Shojima N, Hozawa A, Kadota A, Kuriki K, Naito M, Tanno K. Identification of 28 new susceptibility loci for type 2 diabetes in the Japanese population. Nature genetics. 2019 Mar;51(3):379.
+
+UK Biobank paper:
+Sudlow C, Gallacher J, Allen N, Beral V, Burton P, Danesh J, Downey P, Elliott P, Green J, Landray M, Liu B. UK biobank: an open access resource for identifying the causes of a wide range of complex diseases of middle and old age. PLoS medicine. 2015 Mar 31;12(3):e1001779.
+
+#
