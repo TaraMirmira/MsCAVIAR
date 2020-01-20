@@ -32,9 +32,11 @@ The -n argument specifies the population size for each study, comma-separated. A
 
 ### Other command line options
 
-The other command line options are listed below. We do not recommend changing -g or -s for most users, and -f is deprecated. Users may consider changing the other options, but we recommend reading the paper to understand them before doing so. We explain them briefly here. 
+The other command line options are listed below. We do not recommend changing -g or -s for most users. Users may consider changing the other options, but we recommend reading the paper to understand them before doing so. We explain them briefly here. 
 
 -c controls the maximum number of causal SNPs allowed at a locus; the default is 3. -r ("rho") determines the posterior probability threshold for MsCAVIAR; in other words, MsCAVIAR will return a set of SNPs that, with rho% probability, contains all causal SNPs. The default is 0.95. -t controls the heterogeneity between the studies; in other words, the variance in the effect sizes of causal SNPs not accounted for by sample size imbalance. The default is 0.2.
+
+-f allows MsCAVIAR to print out a _hist.txt_ file that includes the likelihood of the true set containing 0, 1, 2, ... up to the maximum number of causal SNPs that the user sets using the -c option. We recommend using this option when the user is unsure about the number of causal snps in the study, and then adjust -c according to the likelihoods in the histogram file. For example, if the histogram file contains 5 numbers: 1.21973e-150 2.54771e-09 0.614328 0.334465 0.051207, it means that the the causal set most likely contains 2 snps, with L(c=2) = 0.61. But since L(c=3)=0.33 is also relatively likely, we recommend the user to rerun the program using -c 2 or -c 3 as the parameters.
 
 ```
 -r RHO, --rho-prob=RHO     set $rho$ probability (default 0.95)
