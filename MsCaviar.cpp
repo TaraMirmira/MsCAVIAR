@@ -66,7 +66,7 @@ vector<int> read_sigma(string sample_size) {
 }
 
 int main( int argc, char *argv[]  ){
-    int totalCausalSNP = 2;
+    int totalCausalSNP = 3;
     double gamma = 0.01;
     double rho = 0.95;
     bool histFlag = false;
@@ -91,7 +91,7 @@ int main( int argc, char *argv[]  ){
                 cout << "-z ZFile, --z_file=ZFILE   REQUIRED: the z-score and rsID file that contains paths to z files" << endl;
                 cout << "-r RHO, --rho-prob=RHO     set $rho$ probability (default 0.95)" << endl;
                 cout << "-g GAMMA, --gamma      set $gamma$ the prior of a SNP being causal (default 0.01)" << endl;
-                cout << "-c causal          set the maximum number of causal SNPs" << endl;
+                cout << "-c causal          set the maximum number of causal SNPs (default 3)" << endl;
                 cout << "-f 1               to out the probaility of different number of causal SNP" << endl;
                 cout << "-t TAU_SQR, --tau_sqr=TAU_SQR  set the heterogeneity (t^2) across studies, default is 0.2" << endl;
                 cout << "-s SIGMA_G_SQR, --sigma_g_squared=SIGMA_G_SQR    set the NCP variance for the smallest study, default is 5.2" << endl;
