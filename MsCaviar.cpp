@@ -71,7 +71,7 @@ int main( int argc, char *argv[]  ){
     double rho = 0.95;
     bool histFlag = false;
     int oc = 0;
-    double tau_sqr = 0.2;
+    double tau_sqr = 0.52;
     double sigma_g_squared = 5.2;
 
     string ldFile = "";
@@ -93,7 +93,7 @@ int main( int argc, char *argv[]  ){
                 cout << "-g GAMMA, --gamma      set $gamma$ the prior of a SNP being causal (default 0.01)" << endl;
                 cout << "-c causal          set the maximum number of causal SNPs (default 3)" << endl;
                 cout << "-f 1               to out the probaility of different number of causal SNP" << endl;
-                cout << "-t TAU_SQR, --tau_sqr=TAU_SQR  set the heterogeneity (t^2) across studies, default is 0.2" << endl;
+                cout << "-t TAU_SQR, --tau_sqr=TAU_SQR  set the heterogeneity (t^2) across studies, default is 0.52" << endl;
                 cout << "-s SIGMA_G_SQR, --sigma_g_squared=SIGMA_G_SQR    set the NCP variance for the smallest study, default is 5.2" << endl;
                 cout << "-n SAMPLE_SIZE, --sample_size    REQUIRED: set the sample sizes (integer) of individual studies, format: enter 50,100 for study 1 with 50 sample size and 2 with 100" << endl;
                 exit(0);

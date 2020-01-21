@@ -34,15 +34,15 @@ The **-n** argument specifies the population size for each study, comma-separate
 
 The other command line options are listed below. We do not recommend changing -g or -s for most users. Users may consider changing the other options, but we recommend reading the paper to understand them before doing so. We explain them briefly here. 
 
-**-c** controls the maximum number of causal SNPs allowed at a locus; the default is 3. **-r** ("rho") determines the posterior probability threshold for MsCAVIAR; in other words, MsCAVIAR will return a set of SNPs that, with rho% probability, contains all causal SNPs. The default is 0.95. **-t** controls the heterogeneity between the studies; in other words, the variance in the effect sizes of causal SNPs not accounted for by sample size imbalance. The default is 0.2.
+**-c** controls the maximum number of causal SNPs allowed at a locus; the default is 3. **-r** ("rho") determines the posterior probability threshold for MsCAVIAR; in other words, MsCAVIAR will return a set of SNPs that, with rho% probability, contains all causal SNPs. The default is 0.95. **-t** controls the heterogeneity between the studies; in other words, the variance in the effect sizes of causal SNPs not accounted for by sample size imbalance. The default is 0.52.
 
 **-f** allows MsCAVIAR to output a _hist.txt_ file that includes the likelihood of the true set containing 0, 1, 2, ... up to the maximum number of causal SNPs that the user sets using the -c option. We recommend using this option when the user is unsure about the number of causal snps in the study, and then adjust -c according to the likelihoods in the histogram file. For example, if the histogram file contains 5 numbers: "1.21973e-150"  "2.54771e-09"  "0.614328"  "0.334465"  "0.051207", it means that the causal set most likely contains 2 snps, with L(c=2) = 0.61. But since L(c=3)=0.33 indicates that c=3 is also relatively likely, we recommend the user to rerun the program using -c 2 or -c 3 as the parameters to get more accurate results.
 
 ```
 -r RHO, --rho-prob=RHO     set $rho$ probability (default 0.95)
 -g GAMMA, --gamma      set $gamma$ the prior of a SNP being causal (default 0.01)
--c causal          set the maximum number of causal SNPs
+-c causal          set the maximum number of causal SNPs (default 3)
 -f 1               to out the probaility of different number of causal SNP
--t TAU_SQR, --tau_sqr=TAU_SQR  set the heterogeneity (t^2) across studies, default is 0.2
+-t TAU_SQR, --tau_sqr=TAU_SQR  set the heterogeneity (t^2) across studies, default is 0.52
 -s SIGMA_G_SQR, --sigma_g_squared=SIGMA_G_SQR    set the NCP variance for the smallest study, default is 5.2
 ```
