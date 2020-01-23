@@ -1,0 +1,30 @@
+This data was prepared using publicly available type 2 diabetes summary statistics data from Biobank Japan (BBJ) and the UK Biobank (UKB). We also use 1000 Genomes data and a utility script from the PAINTOR software package. We would like to thank the people who made these datasets available and the authors of the corresponding papers.
+
+Biobank Japan data website:
+http://jenger.riken.jp/en/result
+
+UK Biobank data website:
+http://www.nealelab.is/uk-biobank
+
+Biobank Japan paper:
+Suzuki K, Akiyama M, Ishigaki K, Kanai M, Hosoe J, Shojima N, Hozawa A, Kadota A, Kuriki K, Naito M, Tanno K. Identification of 28 new susceptibility loci for type 2 diabetes in the Japanese population. Nature genetics. 2019 Mar;51(3):379.
+
+UK Biobank paper:
+Sudlow C, Gallacher J, Allen N, Beral V, Burton P, Danesh J, Downey P, Elliott P, Green J, Landray M, Liu B. UK biobank: an open access resource for identifying the causes of a wide range of complex diseases of middle and old age. PLoS medicine. 2015 Mar 31;12(3):e1001779.
+
+The main 1000 Genomes papers:
+1000 Genomes Project Consortium. A map of human genome variation from population-scale sequencing. Nature. 2010 Oct;467(7319):1061.
+1000 Genomes Project Consortium. A map of human genome variation from population-scale sequencing. Nature. 2010 Oct;467(7319):1061.
+
+PAINTOR software:
+https://github.com/gkichaev/PAINTOR_V3.0
+
+PAINTOR papers:
+Kichaev G, Yang WY, Lindstrom S, Hormozdiari F, Eskin E, Price AL, Kraft P, Pasaniuc B. Integrating functional data to prioritize causal variants in statistical fine-mapping studies. PLoS genetics. 2014 Oct;10(10).
+Kichaev G, Pasaniuc B. Leveraging functional-annotation data in trans-ethnic fine-mapping studies. The American Journal of Human Genetics. 2015 Aug 6;97(2):260-71.
+Kichaev G, Roytman M, Johnson R, Eskin E, Lindstroem S, Kraft P, Pasaniuc B. Improved methods for multi-trait fine mapping of pleiotropic risk loci. Bioinformatics. 2017 Jan 15;33(2):248-55.
+
+
+PAINTOR guide on creating LD matrices based on the 1000 Genomes data:
+https://github.com/gkichaev/PAINTOR_V3.0/wiki/2a.-Computing-1000-genomes-LD
+#
