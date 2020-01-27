@@ -33,13 +33,13 @@ def parseargs():    # handle user arguments
 		help = 'Continental population group for each study.')
 	parser.add_argument('--population_sizes', required=True, nargs = '+',
 		type = int, help = 'Population size of each study, in order.')
-	parser.add_argument('--mscaviar_loc', required=True,
-		help = 'MsCAVIAR executable location')
 
 	# LOCUS PICKING ARGUMENTS
 
 	parser.add_argument('--exclude_chromosome_six', action='store_true',
 		help = 'Exclude chromosome six from analysis due to HLA regions.')
+	parser.add_argument('--include_non_autosomal', action='store_true',
+		help = 'Include non autosomal (X, Y, MT) chromosomes.')
 	parser.add_argument('--min_peak_zscore', default=5.2, type=float,
 		help = 'Minimum (abs) zscore of peak SNP to create a locus.')
 	parser.add_argument('--min_snp_zscore', default=3.9, type=float,
@@ -64,6 +64,8 @@ def parseargs():    # handle user arguments
 
 	# MsCAVIAR ARGUMENTS
 
+	parser.add_argument('--mscaviar_loc', default = 'AUTO',
+		help = 'MsCAVIAR executable location')
 	parser.add_argument('--max_causal', default=3, type=int,
 		help = 'Maximum number of causal SNPs allowed per locus')
 	parser.add_argument('--rho', default=0.8, type=float,
@@ -105,10 +107,11 @@ def run_ld_generation_process(args, fname):
 #    original order of studies is maintained.
 def run_ld_prune_and_mscaviar_on_dir(args, ldir, mscaviar_results_dir):
 	# set up input and output file names
-	locus_fnames = glob.glob(args.outdir + ldir + '/*.ld')
+	locus_dir_path = args.outdir + ldir
+	locus_fnames = glob.glob(locus_dir_path + '/*.ld')
 	this_args = args
 	this_args.infiles = locus_fnames
-	this_outdir = ldir + '/pruned/'
+	this_outdir = locus_dir_path + '/pruned/'
 	if not os.path.isdir(this_outdir):
 		os.makedirs(this_outdir)
 	this_args.output_prefix = this_outdir
@@ -146,6 +149,8 @@ def main():
 	args = parseargs()
 	if not args.outdir.endswith('/'):
 		args.outdir += '/'
+	if args.mscaviar_loc == 'AUTO':
+		args.mscaviar_loc = __location__ + '../MsCAVIAR'
 	args.zscore_file_ext = '.zscores'
 	args.ld_file_ext = '.ld'
 	args.processed_file_ext = '.processed'

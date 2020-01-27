@@ -12,6 +12,8 @@ def pick_loci_parseargs():    # handle user arguments
 		help = 'Directory to write locus files in.')
 	parser.add_argument('--exclude_chromosome_six', action='store_true',
 		help = 'Exclude chromosome six from analysis due to HLA regions.')
+	parser.add_argument('--include_non_autosomal', action='store_true',
+		help = 'Include non autosomal (X, Y, MT) chromosomes.')
 	parser.add_argument('--min_peak_zscore', default=5.2, type=float,
 		help = 'Minimum (abs) zscore of peak SNP to create a locus.')
 	parser.add_argument('--min_snp_zscore', default=3.9, type=float,
@@ -43,12 +45,15 @@ def find_ordered_peak_snps(all_infiles, min_peak_zscore):
 # Greedily create loci in order of highest abs(zscore), with a window of
 #    window_size BP centered around peak. Overlapping loci are kept separate.
 #    Peak SNPs in an already-existing locus do not form a new locus.
-def pick_locus_locations_greedily(window_size, exclude_chrom_six, peak_snps):
+def pick_locus_locations_greedily(window_size, exclude6, include_sex, peak_snps):
 	loci = {}  # dict so we can search by chromosome
 	peak_snps.sort(key=lambda x: x[-1], reverse=True)  # sort by zscore
 	for snp in peak_snps:
 		chrom, pos = snp[0], int(snp[1])
-		if exclude_chrom_six and chrom.strip('chromosomeCHROMOSOME') == '6':
+		clean_chrom = chrom.strip('chromosomeCHROMOSOME')
+		if exclude6 and clean_chrom == '6':
+			continue
+		if not include_sex and clean_chrom.upper() in ['X', 'Y', 'MT']:
 			continue
 		half_window = int(window_size / 2.0)
 		start, end = pos - half_window, pos + half_window
@@ -180,7 +185,7 @@ def write_locus(infiles, outdir, chrom, locus_info):
 	# each locus gets its own directory, in which the locus files for each study
 	#    are stored
 	locus_name = chrom + '_bp_' + str(start) + '_to_' + str(end)
-	locus_outdir = outdir + 'locus_chromsome_' + locus_name + '/'
+	locus_outdir = outdir + 'locus_chromosome_' + locus_name + '/'
 	if not os.path.exists(locus_outdir):
 		os.makedirs(locus_outdir)
 	for i in range(len(infiles)):
@@ -205,7 +210,8 @@ def pick_loci_main(args = {}):
 
 	# pick loci and gather the snps at those loci
 	peak_snps = find_ordered_peak_snps(args.infiles, args.min_peak_zscore)
-	loci = pick_locus_locations_greedily(args.window_size, args.exclude_chromosome_six, peak_snps)
+	loci = pick_locus_locations_greedily(args.window_size,
+		args.exclude_chromosome_six, args.include_non_autosomal, peak_snps)
 	loci = gather_locus_snps(args.infiles, args.min_snp_zscore, loci)
 
 	# intersect SNPs across studies, then filter loci below min_snps or whose
