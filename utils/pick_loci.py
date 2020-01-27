@@ -30,16 +30,22 @@ def pick_loci_parseargs():    # handle user arguments
 
 # Find all SNPs above the min_peak_zscore threshold
 def find_ordered_peak_snps(all_infiles, min_peak_zscore):
-	peak_snps = []
+	peak_snps, duplicate_snps = [], {}
 	for fname in all_infiles:
+		snps_seen = {}
 		with(open(fname, 'r')) as infile:
 			header = infile.readline()
 			for line in infile:
 				splits = line.strip().split()
-				splits[-1] = abs(float(splits[-1]))
-				if splits[-1] >= min_peak_zscore:
+				snp_name, zscore = splits[2], abs(float(splits[-1]))
+				if snp_name in snps_seen:
+					duplicate_snps[snp_name] = True
+				else:
+					snps_seen[snp_name] = True
+				if zscore >= min_peak_zscore:
+					splits[-1] = zscore
 					peak_snps.append(splits)
-	return peak_snps
+	return peak_snps, duplicate_snps
 
 
 # Greedily create loci in order of highest abs(zscore), with a window of
@@ -76,7 +82,7 @@ def pick_locus_locations_greedily(window_size, exclude6, include_sex, peak_snps)
 
 # Actually gathers the SNP information for all SNPs in all studies that fall
 #    within the locus locations.
-def gather_locus_snps(all_infiles, min_snp_zscore, loci):
+def gather_locus_snps(all_infiles, min_snp_zscore, loci, duplicate_snps):
 	# loci will now store a 4d array per locus per chromosome:
 	#    locus location > study > SNP > info for SNP
 	for fname in all_infiles:
@@ -94,6 +100,8 @@ def gather_locus_snps(all_infiles, min_snp_zscore, loci):
 				if chrom not in loci:
 					continue
 				if abs(float(zscore)) < min_snp_zscore:
+					continue
+				if rsid in duplicate_snps:
 					continue
 
 				intpos = int(pos)
@@ -209,10 +217,10 @@ def pick_loci_main(args = {}):
 	args.min_snp_zscore = abs(args.min_snp_zscore)
 
 	# pick loci and gather the snps at those loci
-	peak_snps = find_ordered_peak_snps(args.infiles, args.min_peak_zscore)
+	peak_snps, duplicate_snps = find_ordered_peak_snps(args.infiles, args.min_peak_zscore)
 	loci = pick_locus_locations_greedily(args.window_size,
 		args.exclude_chromosome_six, args.include_non_autosomal, peak_snps)
-	loci = gather_locus_snps(args.infiles, args.min_snp_zscore, loci)
+	loci = gather_locus_snps(args.infiles, args.min_snp_zscore, loci, duplicate_snps)
 
 	# intersect SNPs across studies, then filter loci below min_snps or whose
 	#    suitable peak SNPs were removed in the intersect step. if not filtered,
