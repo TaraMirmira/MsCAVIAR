@@ -177,7 +177,7 @@ def main():
 	if not os.path.isdir(mscaviar_results_dir):
 		os.makedirs(mscaviar_results_dir)
 	locus_dirs = next(os.walk(args.outdir))[1]
-	locus_dirs = [i for i in locus_dirs if 'locus_chromsome_' in i]
+	locus_dirs = [i for i in locus_dirs if 'locus_chromosome_' in i]
 	for ldir in locus_dirs:
 		run_ld_prune_and_mscaviar_on_dir(args, ldir, mscaviar_results_dir)
 
