@@ -38,7 +38,7 @@ mat MPostCal::construct_diagC(vector<int> configure) {
             if (i == j) // diagonal: scaled variance
                 Matrix_of_sigmaG(i, j) = s_squared * (sample_sizes[i] / min_size);
             else // off-diagonal: covariance
-                Matrix_of_sigmaG(i, j) = s_squared * sqrt(sample_sizes[i] * sample_sizes[j]) / min_size;
+                Matrix_of_sigmaG(i, j) = s_squared * sqrt(long(sample_sizes[i]) * long(sample_sizes[j])) / min_size;
         }
     }
     
