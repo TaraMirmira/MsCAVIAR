@@ -87,7 +87,6 @@ public:
         for(int i = 0; i < snpCount * num_of_studies; i++) {
             for (int j = 0; j < snpCount * num_of_studies; j++) {
                 sigmaMatrix(i,j) = (*BIG_SIGMA)(i,j) + distribution(generator) * 0.005; // add epsilon to SIGMA
-                sigmaMatrix(i,j) = (*BIG_SIGMA)(i,j);
             }
         }
         invSigmaMatrix = inv(sigmaMatrix);
