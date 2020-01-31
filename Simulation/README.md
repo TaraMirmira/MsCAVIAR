@@ -6,9 +6,10 @@ In order to select realistic loci for fine-mapping, we identified regions in a t
 > Nathan LaPierre, Kodi Taraszka, Helen Huang, Rosemary He, Farhad Hormozdiari, Eleazar Eskin  
 > bioRxiv 2020.01.15.908517; doi: https://doi.org/10.1101/2020.01.15.908517
 
-## Getting Started
+## Python scripts that generate summary statistics for multiple populations
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+ld_simulate_helen_v5.py
+ld_simulate_helen_v6.py
 
 ### Prerequisites
 
