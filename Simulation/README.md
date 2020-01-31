@@ -11,14 +11,15 @@ Using these LD matrices, we implanted causal SNPs and simulated their effect siz
 > bioRxiv 2020.01.15.908517; doi: https://doi.org/10.1101/2020.01.15.908517
 
 ## Sample LD files
-In the LD_files/ folder, there are 6 .ld files containing LD matrices that we generated from the 1000 Genomes project. For convenience, we renamed them to {population}\_{amount of LD}.ld
-* ASN_EASY.ld
-* ASN_DIFF.ld
-* ASN_SUPERHARD.ld
-* EURO_EASY.ld
-* EURO_DIFF.ld
-* EURO_SUPERHARD.ld
-The 7th file 
+In the LD_files/ folder, there are 6 .ld files containing LD matrices that we generated from the 1000 Genomes project. For convenience, we renamed them to {population}\_{amount of LD}.ld, but we labels the original file name in the bracket.
+* ASN_EASY.ld (pruned_locus_chr1_bp_114426001_RA_ASN_2014.ld)
+* ASN_DIFF.ld (pruned_locus_chr2_bp_204738919_RA_ASN_2014.ld)
+* ASN_SUPERHARD.ld (pruned_locus_chr13_bp_40318819_RA_ASN_2014.ld)
+* EURO_EASY.ld (pruned_locus_chr1_bp_114426001_RA_EURO_2014.ld)
+* EURO_DIFF.ld (pruned_locus_chr2_bp_204738919_RA_EURO_2014.ld)
+* EURO_SUPERHARD.ld (pruned_locus_chr13_bp_40318819_RA_EURO_2014.ld)
+
+The 7th file (ld_levels_report.txt) reports the amount of LD for each file above (please use the original file name to search for the corresponding LD level).
 
 ## Generating summary statistics for multiple populations
 The following Python takes LD matrices and simulates summary statistics for multiple populations:
