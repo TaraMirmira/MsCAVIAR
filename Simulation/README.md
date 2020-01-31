@@ -19,14 +19,14 @@ In the LD_files/ folder, there are 6 .ld files containing LD matrices that we ge
 * _EURO_DIFF.ld_ (pruned_locus_chr2_bp_204738919_RA_EURO_2014.ld)
 * _EURO_SUPERHARD.ld_ (pruned_locus_chr13_bp_40318819_RA_EURO_2014.ld)
 
-The 7th file (ld_levels_report.txt) reports the amount of LD for each file above (please use the original file name to search for the corresponding LD level).
+The 7th file (_ld_levels_report.txt_) reports the amount of LD for each file above (please use the original file name to search for the corresponding LD level).
 
 ## Generating summary statistics for multiple populations
-The following Python takes LD matrices and simulates summary statistics for multiple populations with the same sample size:
+The following Python script takes LD matrices and simulates summary statistics for multiple populations with the same sample size (Note: v3 requires that non-causal snps should be significant between 5%-50% of the time, and that causal snps should have have ld less than 70% among them; v4 requires that non-causal snps should be significant between 5%-80% of the time, and impose no requirement on the ld between the causal snps. These requirements control the "difficulty" of the simulated studies):
 * _ld_simulate_helen_v3.py_
 * _ld_simulate_helen_v4.py_
 
-The following Python takes LD matrices and simulates summary statistics for multiple populations with unequal sample sizes:
+The following Python script takes LD matrices and simulates summary statistics for multiple populations with unequal sample sizes (Note: v5 requires that non-causal snps should be significant between 5%-80% of the time, and that causal snps should have have ld less than 70% among them; v6 requires that non-causal snps should be significant more then 5% of the time (no upper-bound), and impose no requirement on the ld between the causal snps. These requirements control the "difficulty" of the simulated studies):
 * _ld_simulate_helen_v5.py_
 * _ld_simulate_helen_v6.py_
 
