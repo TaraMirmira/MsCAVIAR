@@ -6,18 +6,21 @@ In order to select realistic loci for fine-mapping, we identified regions in a t
 > Nathan LaPierre, Kodi Taraszka, Helen Huang, Rosemary He, Farhad Hormozdiari, Eleazar Eskin  
 > bioRxiv 2020.01.15.908517; doi: https://doi.org/10.1101/2020.01.15.908517
 
-## Python scripts that generate summary statistics for multiple populations
+## Generating summary statistics for multiple populations
+The following Python takes LD matrices and simulates summary statistics for multiple populations:
 
-ld_simulate_helen_v5.py
-ld_simulate_helen_v6.py
+ld_simulate_helen_v3.py
+
+ld_simulate_helen_v4.py
+
+```
+python3 ld_simulate_helen_v3.py -l1 ${ld_dir}/${pop1}.ld -l2 ${ld_dir}/${pop2}.ld -o $sim_dir -c $this_num_causal -s $num_sim -t $this_tau_2
+```
 
 ### Prerequisites
 
 What things you need to install the software and how to install them
 
-```
-Give examples
-```
 
 ### Installing
 
