@@ -6,12 +6,20 @@ In order to select realistic loci for fine-mapping, we identified regions in a t
 > Nathan LaPierre, Kodi Taraszka, Helen Huang, Rosemary He, Farhad Hormozdiari, Eleazar Eskin  
 > bioRxiv 2020.01.15.908517; doi: https://doi.org/10.1101/2020.01.15.908517
 
+## Sample LD files
+In the LD_files/ folder, there are 6 .ld files containing LD matrices that we generated from the 1000 Genomes project. For convenience, we renamed them to {population}\_{amount of LD}.ld
+* ASN_EASY.ld
+* ASN_DIFF.ld
+* ASN_SUPERHARD.ld
+* EURO_EASY.ld
+* EURO_DIFF.ld
+* EURO_SUPERHARD.ld
+The 7th file 
+
 ## Generating summary statistics for multiple populations
 The following Python takes LD matrices and simulates summary statistics for multiple populations:
-
-ld_simulate_helen_v3.py
-
-ld_simulate_helen_v4.py
+* ld_simulate_helen_v3.py
+* ld_simulate_helen_v4.py
 
 ```
 python3 ld_simulate_helen_v3.py -l1 ${ld_dir}/${pop1}.ld -l2 ${ld_dir}/${pop2}.ld -o $sim_dir -c $this_num_causal -s $num_sim -t $this_tau_2
