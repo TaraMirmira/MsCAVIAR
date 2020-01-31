@@ -22,87 +22,23 @@ In the LD_files/ folder, there are 6 .ld files containing LD matrices that we ge
 The 7th file (ld_levels_report.txt) reports the amount of LD for each file above (please use the original file name to search for the corresponding LD level).
 
 ## Generating summary statistics for multiple populations
-The following Python takes LD matrices and simulates summary statistics for multiple populations:
-* ld_simulate_helen_v3.py
-* ld_simulate_helen_v4.py
+The following Python takes LD matrices and simulates summary statistics for multiple populations with the same sample size:
+* _ld_simulate_helen_v3.py_
+* _ld_simulate_helen_v4.py_
 
+The following Python takes LD matrices and simulates summary statistics for multiple populations with unequal sample sizes:
+* _ld_simulate_helen_v5.py_
+* _ld_simulate_helen_v6.py_
+
+To run a simulation for the same sample size, run the following line:
 ```
 python3 ld_simulate_helen_v3.py -l1 ${ld_dir}/${pop1}.ld -l2 ${ld_dir}/${pop2}.ld -o $sim_dir -c $this_num_causal -s $num_sim -t $this_tau_2
 ```
-
-### Prerequisites
-
-What things you need to install the software and how to install them
-
-
-### Installing
-
-A step by step series of examples that tell you how to get a development env running
-
-Say what the step will be
-
+To run a simulation for unequal sample sizes, run the following line:
 ```
-Give the example
+python3 ld_simulate_helen_v5.py -l1 ${ld_dir}/${pop1}.ld -l2 ${ld_dir}/${pop2}.ld -o $sim_dir -c $this_num_causal -s $num_sim -t $this_tau_2 -n $study_size_1','$this_study_size_2
 ```
+where ${ld_dir} is the directory of the LD files; $sim_dir is the directory to output the simulated studies; $this_num_causal is the number of implaneted causal variants, $num_sim is the number of simulations the user wish to generate; $this_tau_2 is the heterogeneity (0.5 in the paper) between the studies. Please refer to our paper for more details.
 
-And repeat
-
-```
-until finished
-```
-
-End with an example of getting some data out of the system or using it for a little demo
-
-## Running the tests
-
-Explain how to run the automated tests for this system
-
-### Break down into end to end tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-### And coding style tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-## Deployment
-
-Add additional notes about how to deploy this on a live system
-
-## Built With
-
-* [Dropwizard](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
-* [Maven](https://maven.apache.org/) - Dependency Management
-* [ROME](https://rometools.github.io/rome/) - Used to generate RSS Feeds
-
-## Contributing
-
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
-
-## Versioning
-
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
-
-## Authors
-
-* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
-
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
-
-## Acknowledgments
-
-* Hat tip to anyone whose code was used
-* Inspiration
-* etc
+### Running fine-mapping methods on the generated LD and summary statistics
+In our paper, CAVIAR, MsCAVIAR, PAINTOR, and SuSiE were compared of their sensitivity and set sizes.
