@@ -48,8 +48,13 @@ In our paper, CAVIAR, MsCAVIAR, PAINTOR, and SuSiE were compared of their sensit
 
 ### Helper scripts
 _capture.py_ is a Python script that captures the sensitivity (recall rate) and set size of the each causal set outputted by the methods. Sensitivity is calculated as: length(union(outputted_causal_set, true_causal_set))/length(true_causal_set); whereas set size is calculated as: length(outputted_causal_set).
-
-    For example, if the causal set contains 6 snps: "rs5", "rs6", "rs10", "rs12", "rs20", "rs25". And the true causal set that was implanted when we generated the summary statistics are "rs6", "rs10", "rs13". Then the sensitivity is 0.667, because only "rs6", "rs10" are successfully detected, and the set size is simply 6.
+```diff
+- text in red
++ text in green
+! text in orange
+# text in gray
+```
+For example, if the causal set contains 6 snps: "rs5", "rs6", "rs10", "rs12", "rs20", "rs25". And the true causal set that was implanted when we generated the summary statistics are "rs6", "rs10", "rs13". Then the sensitivity is 0.667, because only "rs6", "rs10" are successfully detected, and the set size is simply 6.
 
 Because PAINTOR does not output the causal set directly, but returns the posterior probability for each snp, the _paintor.R_ script harvests the list of posterior probabilities that PAINTOR returns and convert them to a causal set by selecting the snps with the highest posterior probabilities that sum to >= 95%, which is the standard we used for CAVIAR and MsCAVIAR.
 
