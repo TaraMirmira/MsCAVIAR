@@ -41,7 +41,14 @@ python3 ld_simulate_helen_v5.py -l1 ${ld_dir}/${pop1}.ld -l2 ${ld_dir}/${pop2}.l
 where ${ld_dir} is the directory of the LD files; $sim_dir is the directory to output the simulated studies; $this_num_causal is the number of implanted causal variants, $num_sim is the number of simulations the user wish to generate; $this_tau_2 is the heterogeneity (0.5 in the paper) between the studies. Please refer to our paper for more details.
 
 ## Running fine-mapping methods on the generated LD and summary statistics
-In our paper, CAVIAR, MsCAVIAR, PAINTOR, and SuSiE were compared of their sensitivity and set sizes. Please refer to the following Shell scripts for an idea of how we ran each method (Note: the file paths need to be replaced with your own file paths, and our computer cluster might have a different job handling system from yours). The scripts are commented to enhance understanding.
+In our paper, CAVIAR, MsCAVIAR, PAINTOR, and SuSiE were compared of their sensitivity and set sizes. Please refer to the following Shell scripts for an idea of how we ran each method (Note: the file paths need to be replaced with your own file paths, and our computer cluster might have a different job handling system from yours). The Shell scripts are commented to enhance understanding.
 
 * _MsCAVIAR_simulation.sh_
 * _MsCAVIAR_unequal.sh_
+
+### Helper scripts
+The helper script _capture.py_ is a Python script that captures the sensitivity (recall rate) and set size of the each causal set outputted by the methods. Sensitivity is calculated as: length(union(outputted_causal_set, true_causal_set))/length(true_causal_set); whereas set size is calculated as: length(outputted_causal_set).
+
+Because PAINTOR does not output the causal set directly, but returns the posterior probability for each snp, the _paintor.R_ script harvests the list of posterior probabilities that PAINTOR returns and convert them to a causal set by selecting the snps with the highest posterior probabilities that sum to >= 95%.
+
+_susie2.R_ is an R script that runs the R-based package SuSiE (Sum of Single Effects). We used the ```susie_rss()``` function.
