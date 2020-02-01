@@ -38,7 +38,7 @@ To run a simulation for unequal sample sizes, run the following line:
 ```
 python3 ld_simulate_helen_v5.py -l1 ${ld_dir}/${pop1}.ld -l2 ${ld_dir}/${pop2}.ld -o $sim_dir -c $this_num_causal -s $num_sim -t $this_tau_2 -n $study_size_1','$this_study_size_2
 ```
-where ${ld_dir} is the directory of the LD files; $sim_dir is the directory to output the simulated studies; $this_num_causal is the number of implaneted causal variants, $num_sim is the number of simulations the user wish to generate; $this_tau_2 is the heterogeneity (0.5 in the paper) between the studies. Please refer to our paper for more details.
+where ${ld_dir} is the directory of the LD files; $sim_dir is the directory to output the simulated studies; $this_num_causal is the number of implanted causal variants, $num_sim is the number of simulations the user wish to generate; $this_tau_2 is the heterogeneity (0.5 in the paper) between the studies. Please refer to our paper for more details.
 
 ## Running fine-mapping methods on the generated LD and summary statistics
 In our paper, CAVIAR, MsCAVIAR, PAINTOR, and SuSiE were compared of their sensitivity and set sizes. Please refer to the following Shell scripts for an idea of how we ran each method (Note: the file paths need to be replaced with your own file paths, and our computer cluster might have a different job handling system from yours). The scripts are commented to enhance understanding.
