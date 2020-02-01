@@ -47,8 +47,8 @@ In our paper, CAVIAR, MsCAVIAR, PAINTOR, and SuSiE were compared of their sensit
 * _MsCAVIAR_unequal.sh_
 
 ### Helper scripts
-The helper script _capture.py_ is a Python script that captures the sensitivity (recall rate) and set size of the each causal set outputted by the methods. Sensitivity is calculated as: length(union(outputted_causal_set, true_causal_set))/length(true_causal_set); whereas set size is calculated as: length(outputted_causal_set).
+_capture.py_ is a Python script that captures the sensitivity (recall rate) and set size of the each causal set outputted by the methods. Sensitivity is calculated as: length(union(outputted_causal_set, true_causal_set))/length(true_causal_set); whereas set size is calculated as: length(outputted_causal_set).
 
-Because PAINTOR does not output the causal set directly, but returns the posterior probability for each snp, the _paintor.R_ script harvests the list of posterior probabilities that PAINTOR returns and convert them to a causal set by selecting the snps with the highest posterior probabilities that sum to >= 95%.
+Because PAINTOR does not output the causal set directly, but returns the posterior probability for each snp, the _paintor.R_ script harvests the list of posterior probabilities that PAINTOR returns and convert them to a causal set by selecting the snps with the highest posterior probabilities that sum to >= 95%, which is the standard we used for CAVIAR and MsCAVIAR.
 
 _susie2.R_ is an R script that runs the R-based package SuSiE (Sum of Single Effects). We used the ```susie_rss()``` function.
