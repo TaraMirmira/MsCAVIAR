@@ -1,5 +1,5 @@
 # MsCaviar Simulation Scripts
-For better reproducibility, we provide our simulation process:
+For reproducibility purposes, we provide our simulation process:
 
 In order to evaluate the performance of MsCAVIAR as compared with other methods, we performed a simulation study. 
 In order to select realistic loci for fine-mapping, we identified regions in a trans-ethnic GWAS of rheumatoid arthritis that contained peak SNPs with p-values of less than 0.0001 and contained ten or more SNPs in a 100kbp region centered around that peak. For each such locus, we used the 1000 Genomes project to generate LD matrices for the SNPs at that locus for both European and East Asian populations. Out of these loci, we selected one region with relatively low LD, where 20% of the SNPs have LD equal to or higher than 0.5, and one region with relatively high LD, where 80% of the SNPs have LD equal to or higher than 0.5. These represent easier and more difficult scenarios, respectively, for fine mapping, since LD makes signals more difficult to distinguish. We pruned groups of SNPs that were in perfect LD in one or more of the populations, leaving one SNP for each. If a group of SNPs were in perfect LD in one population, but not the other, we retained the SNP with the highest Z-score in the other population in order to retain the most signal.
