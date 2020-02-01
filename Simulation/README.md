@@ -54,7 +54,7 @@ _capture.py_ is a Python script that captures the sensitivity (recall rate) and 
 ! text in orange
 # text in gray
 ```
-For example, if the causal set contains 6 snps: "rs5", "rs6", "rs10", "rs12", "rs20", "rs25". And the true causal set that was implanted when we generated the summary statistics are "rs6", "rs10", "rs13". Then the sensitivity is 0.667, because only "rs6", "rs10" are successfully detected, and the set size is simply 6.
+#For example, if the causal set contains 6 snps: "rs5", "rs6", "rs10", "rs12", "rs20", "rs25". And the true causal set that was implanted when we generated the summary statistics are "rs6", "rs10", "rs13". Then the sensitivity is 0.667, because only "rs6", "rs10" are successfully detected, and the set size is simply 6.
 
 Because PAINTOR does not output the causal set directly, but returns the posterior probability for each snp, the _paintor.R_ script harvests the list of posterior probabilities that PAINTOR returns and convert them to a causal set by selecting the snps with the highest posterior probabilities that sum to >= 95%, which is the standard we used for CAVIAR and MsCAVIAR.
 
