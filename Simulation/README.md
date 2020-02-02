@@ -11,7 +11,7 @@ Using these LD matrices, we implanted causal SNPs and simulated their effect siz
 > bioRxiv 2020.01.15.908517; doi: https://doi.org/10.1101/2020.01.15.908517
 
 ## Sample LD files
-In the LD_files/ folder, there are 6 .ld files containing LD matrices that we generated from the 1000 Genomes project. For convenience, we renamed them to {population}\_{amount of LD}.ld, but we labels the original file name in the bracket. In our paper, we reported "Low LD" and "High LD" results, which correspond to EASY and SUPERHARD in the following files.
+In the LD_files/ folder, there are 6 .ld files containing LD matrices that we generated from the 1000 Genomes project. For convenience, we renamed them to {population}\_{amount of LD}.ld, but we label the original file name (chromosome and loci info) in the bracket. In our paper, we reported "Low LD" and "High LD" results, which correspond to EASY and SUPERHARD in the following files.
 * _ASN_EASY.ld_ (pruned_locus_chr1_bp_114426001_RA_ASN_2014.ld)
 * _ASN_DIFF.ld_ (pruned_locus_chr2_bp_204738919_RA_ASN_2014.ld)
 * _ASN_SUPERHARD.ld_ (pruned_locus_chr13_bp_40318819_RA_ASN_2014.ld)
