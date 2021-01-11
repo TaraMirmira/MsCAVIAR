@@ -1,4 +1,3 @@
-
 #ifndef MUTIL_H
 #define MUTIL_H
 
@@ -88,5 +87,12 @@ void export2File(string fileName, double data);
  */
 void makeSigmaPositiveSemiDefinite(mat * sigma, int size);
 
-
+/*
+ handles low rank case, performs eigenvalue decomposition on the matrix sigma = LDL(trans)
+ On output the diagonal of the input matrix sigma stores the diagonal elements of D, 
+ and the lower triangular portion of A contains the matrix L. 
+ Since L has ones on its diagonal these do not need to be explicitely stored. 
+ The upper triangular portion of A is unmodified.
+*/
+mat* eigen_decomp(mat* sigma, int size);
 #endif

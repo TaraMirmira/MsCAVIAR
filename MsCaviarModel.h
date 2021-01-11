@@ -40,6 +40,7 @@ public:
     double sigma_g_squared;
     int num_of_studies;
     vector<double> S_LONG_VEC;
+    bool haslowrank = false;
 
     /*
      consrtuctor for MCaviarModel
@@ -108,9 +109,16 @@ public:
                 }
             }
         }
-         */
+        */
 
+        //make positive definite
         for (int i = 0; i < sigma->size(); i++){
+            //check for low rank
+            if(arma::rank(sigma->at(i)) < snpCount){
+                haslowrank = true;
+                std::cout << "study " << i << " has low rank. Implementing low_rank method.\n";
+            }
+            
             makeSigmaPositiveSemiDefinite(&(sigma->at(i)), snpCount);
         }
 
@@ -122,7 +130,49 @@ public:
             (*BIG_SIGMA) = (*BIG_SIGMA) + temp_sigma;
         }
 
-        post = new MPostCal(BIG_SIGMA, &S_LONG_VEC, snpCount, totalCausalSNP, snpNames, gamma, tau_sqr, sigma_g_squared, num_of_studies, sample_sizes);
+        //if low rank, BIG_SIGMA = BIG_B, Stat matrix has new distribution
+        if(haslowrank == true){
+            //construct big B
+            mat* BIG_B = new mat(snpCount*num_of_studies, snpCount*num_of_studies,fill::zeros);
+            for(int i = 0; i<num_of_studies; i++){
+                mat* tmpmat = new mat(snpCount,snpCount,fill::zeros);
+                *tmpmat = BIG_SIGMA->submat(i*snpCount,i*snpCount,(i+1)*snpCount-1,(i+1)*snpCount-1);
+                mat* tmpOmega = new mat(snpCount,snpCount,fill::zeros);
+                tmpOmega = eigen_decomp(tmpmat,snpCount);
+
+                //construct B
+                mat trans_Q = trans(*tmpmat);
+                mat sqrt_Omega = sqrt(*tmpOmega);
+                mat B_each = sqrt_Omega * trans_Q;
+
+                //merge to Big B
+                mat temp_b = mat(num_of_studies , num_of_studies, fill::zeros);
+                temp_b(i,i) = 1;
+                temp_b = kron(temp_b, B_each);
+                (*BIG_B) = (*BIG_B) + temp_b;
+
+                //update S_LONG_VEC
+                mat* z_score = new mat(snpCount,1,fill::zeros);
+                for(int j = 0; j < snpCount; j++){
+                    (*z_score)(j,0) = S_LONG_VEC[i*snpCount+j];
+                }
+
+                mat tmpS = inv(sqrt_Omega) * trans_Q;
+                mat lowS = tmpS * (*z_score);
+
+                for(int j = 0; j < snpCount; j++){
+                    S_LONG_VEC[i*snpCount+j] = lowS(j,0);
+                }
+                delete(tmpmat);
+                delete(tmpOmega);
+                delete(z_score);
+            }
+
+            *BIG_SIGMA = *BIG_B;
+            delete(BIG_B);
+        }	
+
+        post = new MPostCal(BIG_SIGMA, &S_LONG_VEC, snpCount, totalCausalSNP, snpNames, gamma, tau_sqr, sigma_g_squared, num_of_studies, sample_sizes, haslowrank);
     }
 
     /*

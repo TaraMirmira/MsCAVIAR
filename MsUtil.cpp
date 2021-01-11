@@ -12,6 +12,7 @@
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
+#include <gsl/gsl_eigen.h>
 
 using namespace std;
 using namespace arma;
@@ -135,7 +136,7 @@ void makeSigmaPositiveSemiDefinite(mat* sigma, int size) {
 
         gsl_linalg_LU_decomp(tmpResultMatrix, p, &gsl_tmp);
         matDet = gsl_linalg_LU_det(tmpResultMatrix,gsl_tmp);
-        if(matDet > 0 )
+        if(matDet > 0)
             positive = true;
         else {
             addDiag += 0.01;
@@ -145,4 +146,41 @@ void makeSigmaPositiveSemiDefinite(mat* sigma, int size) {
     for(int i = 0; i < size; i++){
         (*sigma)(i,i) = (*sigma)(i,i) + addDiag;
     }
+}
+
+mat* eigen_decomp(mat* sigma, int size){
+    gsl_matrix *tmpSigma = gsl_matrix_calloc(size, size);
+    gsl_matrix *eigenvec = gsl_matrix_calloc(size, size);
+    gsl_vector *eigenval = gsl_vector_calloc(size);
+    gsl_eigen_symmv_workspace *w = gsl_eigen_symmv_alloc(size);
+    //gsl_eigen_hermv_workspace *w = gsl_eigen_hermv_alloc(size);
+
+    for(int i = 0; i < size; i++) {
+        for (int j = 0; j < size; j++) {
+            gsl_matrix_set(tmpSigma,i,j,(*sigma)(i, j));
+        }
+    }
+
+    //decompose to sigma = QDQ(trans), Q is orthogonal matrix of eigenvectors, D is diagonal matrix of eigenvalues
+    gsl_eigen_symmv(tmpSigma, eigenval, eigenvec, w);
+
+    //store all the eigenvalues
+    mat* vals = new mat(size, size,fill::zeros);
+    for(int i = 0; i < size; i++){
+        (*vals)(i,i) = gsl_vector_get(eigenval,i);
+    }
+
+    //store all the eigenvectors in sigma
+    for(int i = 0; i < size; i++){
+        for(int j = 0; j < size; j++){
+            (*sigma)(i,j) = gsl_matrix_get(eigenvec,i,j);
+        }
+    }
+
+    gsl_matrix_free(tmpSigma);
+    gsl_matrix_free(eigenvec);
+    gsl_vector_free(eigenval); 
+    gsl_eigen_symmv_free(w);
+    
+    return vals;
 }

@@ -31,6 +31,7 @@ private:
     double t_squared;    //tau^2 (heterogeneity)
     double s_squared;    //sigma_g^2 (heritability)
     int num_of_studies;
+    bool haslowrank = false;
 
     mat sigmaMatrix;
     mat invSigmaMatrix;
@@ -56,7 +57,7 @@ public:
     /*
      constructor
     */
-    MPostCal(mat * BIG_SIGMA, vector<double> * S_LONG_VEC, int snpCount, int MAX_causal, vector<vector<string> > * SNP_NAME, double gamma, double t_squared, double s_squared, int num_of_studies, vector<int> sample_sizes) {
+    MPostCal(mat * BIG_SIGMA, vector<double> * S_LONG_VEC, int snpCount, int MAX_causal, vector<vector<string> > * SNP_NAME, double gamma, double t_squared, double s_squared, int num_of_studies, vector<int> sample_sizes, bool lowrank) {
         this->gamma = gamma;
         this->SNP_NAME = SNP_NAME;
         this-> snpCount = snpCount;
@@ -72,6 +73,7 @@ public:
         this-> s_squared = s_squared;
         this-> num_of_studies = num_of_studies;
         this-> sample_sizes = sample_sizes;
+        this-> haslowrank = lowrank;
 
         // statMatrix is the z-score matrix of mn*1, m = number of snps, n = num of studies
         statMatrix = mat (snpCount * num_of_studies, 1);
@@ -80,8 +82,10 @@ public:
             statMatrix(i,0) = (*S_LONG_VEC)[i];
             statMatrixtTran(0,i) = (*S_LONG_VEC)[i];
         }
-        // sigmaMatrix is an array of sigma matrices for each study i, same for invSigmaMatrix, sigmaDet
+        // sigmaMatrix is diagonal matrix of sigma matrices for each study i, same for invSigmaMatrix, sigmaDet
         sigmaMatrix = mat (snpCount * num_of_studies, snpCount * num_of_studies);
+        sigmaMatrix = (*BIG_SIGMA);
+        /*
         std::default_random_engine generator;
         std::normal_distribution<double> distribution(0, 1);
         for(int i = 0; i < snpCount * num_of_studies; i++) {
@@ -89,6 +93,8 @@ public:
                 sigmaMatrix(i,j) = (*BIG_SIGMA)(i,j) + distribution(generator) * 0.005; // add epsilon to SIGMA
             }
         }
+        */
+
         invSigmaMatrix = inv(sigmaMatrix);
         sigmaDet       = det(sigmaMatrix);
 
@@ -116,6 +122,15 @@ public:
     double likelihood(vector<int> configure, vector<double> * stat, double sigma_g_squared) ;
 
     /*
+     compute likelihood for low rank matrices
+     :param configure the causal status vector of 0 and 1
+     :param stat the z-score of each snp
+     :param sigma_g_squared the non-centrality param
+     :return likelihood of the configuration
+     */
+    double lowrank_likelihood(vector<int> configure, vector<double> * stat, double sigma_g_squared) ;
+
+    /*
      find the next binary configuration based on the previous config and size of vector
      */
     int nextBinary(vector<int>& data, int size) ;
@@ -127,7 +142,7 @@ public:
 
     /*
      greedy algorithm to find minimal set
-     @param stat is the z-scpres
+     @param stat is the z-scores
      @param sigma is the correaltion matrix
      */
     double findOptimalSetGreedy(vector<double> * stat, double sigma_g_squared, vector<char> * pcausalSet, vector<int> *rank,  double inputRho, string outputFileName);
@@ -147,9 +162,17 @@ public:
         ofstream outfile(fileName.c_str(), ios::out );
         for(int i = 0; i < snpCount; i++)
             total_post = addlogSpace(total_post, postValues[i]);
+        
+        /* old post file output
         outfile << "SNP_ID\tProb_in_pCausalSet\tCausal_Post._Prob." << endl;
         for(int i = 0; i < snpCount; i++) {
             outfile << (*SNP_NAME)[0][i] << "\t" << exp(postValues[i]-total_post) << "\t" << exp(postValues[i]-totalLikeLihoodLOG) << endl;
+        }
+        */
+
+        outfile << "SNP_ID\tProb_in_pCausalSet" << endl;
+        for(int i = 0; i < snpCount; i++) {
+            outfile << (*SNP_NAME)[0][i] << "\t" << exp(postValues[i]-total_post) << endl;
         }
     }
 

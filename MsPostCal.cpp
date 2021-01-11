@@ -122,6 +122,109 @@ double MPostCal::likelihood(vector<int> configure, vector<double> * stat, double
         cout << "Error the matrix is singular and we fail to fix it." << endl;
         exit(0);
     }
+
+    /*
+     We compute the log of -res/2-log(det) to see if it is too big or not.
+     In the case it is too big we just make it a MAX value.
+     */
+    double tmplogDet = log(sqrt(abs(matDet)));
+    double tmpFinalRes = -res/2 - tmplogDet;
+
+    return tmpFinalRes;
+}
+
+//here we still use Woodbury matrix, here sigma_matrix is B, and S is updated already
+double MPostCal::lowrank_likelihood(vector<int> configure, vector<double> * stat, double sigma_g_squared) {
+    int causalCount = 0;
+    double matDet   = 0;
+    double res      = 0;
+
+    for(int i = 0; i < snpCount; i++)
+        causalCount += configure[i];
+    if(causalCount == 0){
+        mat tmpResultMatrixNN = statMatrixtTran * statMatrix;
+        res = tmpResultMatrixNN(0,0);
+        matDet = 1;
+        return (-res/2-sqrt(abs(matDet)));
+    }
+
+    mat sigmaC = construct_diagC(configure);
+    int index_C = 0;
+    mat sigmaMatrixTran = sigmaMatrix.t();
+
+    /* woodbury implementation, not ready
+    // In unequal sample size studies, U is adjusted for the sample sizes
+    // here we make U = B * sigmaC, this is still kn by mn
+    mat U(causalCount * num_of_studies, snpCount * num_of_studies, fill::zeros);
+    mat tmpSigC(causalCount * num_of_studies, snpCount * num_of_studies, fill::zeros);
+    
+    // tmpB is the submatrix of B where only the causal lines are included
+    mat beforeB(causalCount * num_of_studies,snpCount * num_of_studies,fill::zeros);
+    mat afterB(snpCount * num_of_studies,causalCount * num_of_studies,fill::zeros);
+
+    for (int i = 0; i < snpCount * num_of_studies; i++) {
+        if (configure[i] == 1) {
+            for (int j = 0; j < snpCount * num_of_studies; j++) {
+                tmpSigC(index_C, j) = sigmaC(i, j);
+            }
+            beforeB(index_C, i) = 1;
+            afterB(i,index_C) = 1;
+
+            index_C++;
+        }
+    }
+
+    mat temp = beforeB * sigmaMatrix; //this is kn by mn
+    mat tmpB = temp * afterB; //this is now kn by kn
+    U = tmpB * tmpSigC; //U is still kn by mn
+
+    index_C = 0;
+
+    // here V is B_trans, this is mn by kn
+    mat V(causalCount * num_of_studies, snpCount * num_of_studies, fill::zeros);
+    for (int i = 0; i < snpCount * num_of_studies; i++) {
+        if (configure[i] == 1) {
+            for (int j = 0; j < snpCount * num_of_studies; j++) {
+                V(index_C, j) = sigmaMatrix(i, j);
+            }
+            index_C ++;
+        }
+    }
+    V = V.t();
+
+    // UV = B * SigmaC * Btrans (kn by kn)
+    mat UV(causalCount * num_of_studies, causalCount * num_of_studies, fill::zeros);
+    UV = U * V;
+
+    mat I_AA   = mat(snpCount * num_of_studies, snpCount * num_of_studies, fill::eye);
+    mat tmp_CC = mat(causalCount * num_of_studies, causalCount * num_of_studies, fill::eye) + UV;
+    //matDet = det(tmp_CC);
+
+    mat temp2 = V * pinv(tmp_CC);
+    mat tmp_AA = I_AA - temp2 * U ;
+
+    mat tmpResultMatrix1N = statMatrixtTran * tmp_AA;
+    mat tmpResultMatrix11 = tmpResultMatrix1N * statMatrix;
+    res = tmpResultMatrix11(0,0);
+
+    
+    if(matDet==0) {
+        cout << "Error the matrix is singular and we fail to fix it." << endl;
+        exit(0);
+    }
+    */
+
+    //brute force method
+    mat firsttemp = sigmaMatrix * sigmaC;
+    mat secondtemp = firsttemp * sigmaMatrixTran;
+    mat variance = mat(snpCount * num_of_studies, snpCount * num_of_studies, fill::eye) + secondtemp;
+
+    matDet = det(variance);
+
+    mat tmpResultMat1N = statMatrixtTran * pinv(variance);
+    mat tmpResultMatrix11 = tmpResultMat1N * statMatrix;
+    res = tmpResultMatrix11(0,0);
+
     /*
      We compute the log of -res/2-log(det) to see if it is too big or not.
      In the case it is too big we just make it a MAX value.
@@ -211,7 +314,13 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
     }
 
     for(long int i = 0; i < total_iteration; i++) {
-        tmp_likelihood = likelihood(tempConfigure, stat, sigma_g_squared) + num * log(gamma) + (snpCount-num) * log(1-gamma);
+        //double tmp_likelihood;
+        if(haslowrank==true){
+            tmp_likelihood = lowrank_likelihood(tempConfigure, stat, sigma_g_squared) + num * log(gamma) + (snpCount-num) * log(1-gamma);
+        }
+        else{
+            tmp_likelihood = likelihood(tempConfigure, stat, sigma_g_squared) + num * log(gamma) + (snpCount-num) * log(1-gamma);
+        }
         sumLikelihood = addlogSpace(sumLikelihood, tmp_likelihood);
 
         for(int j = 0; j < snpCount; j++) {
@@ -249,7 +358,7 @@ double MPostCal::findOptimalSetGreedy(vector<double> * stat, double sigma_g_squa
     export2File(outputFileName+"_log.txt", exp(totalLikeLihoodLOG)); //Output the total likelihood to the log File
     for(int i = 0; i < snpCount; i++)
         total_post = addlogSpace(total_post, postValues[i]);
-    printf("Total Likelihood = %e SNP=%d \n", total_post, snpCount);
+    printf("\nTotal Likelihood = %e SNP=%d \n", total_post, snpCount);
 
     std::vector<data> items;
     std::set<int>::iterator it;
