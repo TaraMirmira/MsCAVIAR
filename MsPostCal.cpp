@@ -152,31 +152,20 @@ double MPostCal::lowrank_likelihood(vector<int> configure, vector<double> * stat
     int index_C = 0;
     mat sigmaMatrixTran = sigmaMatrix.t();
 
-    /* woodbury implementation, not ready
     // In unequal sample size studies, U is adjusted for the sample sizes
     // here we make U = B * sigmaC, this is still kn by mn
     mat U(causalCount * num_of_studies, snpCount * num_of_studies, fill::zeros);
-    mat tmpSigC(causalCount * num_of_studies, snpCount * num_of_studies, fill::zeros);
+    mat full_U(causalCount * num_of_studies, snpCount * num_of_studies, fill::zeros);
+    full_U = sigmaMatrix * sigmaC;
     
-    // tmpB is the submatrix of B where only the causal lines are included
-    mat beforeB(causalCount * num_of_studies,snpCount * num_of_studies,fill::zeros);
-    mat afterB(snpCount * num_of_studies,causalCount * num_of_studies,fill::zeros);
-
     for (int i = 0; i < snpCount * num_of_studies; i++) {
         if (configure[i] == 1) {
             for (int j = 0; j < snpCount * num_of_studies; j++) {
-                tmpSigC(index_C, j) = sigmaC(i, j);
+                U(index_C, j) = full_U(j, i);
             }
-            beforeB(index_C, i) = 1;
-            afterB(i,index_C) = 1;
-
             index_C++;
         }
     }
-
-    mat temp = beforeB * sigmaMatrix; //this is kn by mn
-    mat tmpB = temp * afterB; //this is now kn by kn
-    U = tmpB * tmpSigC; //U is still kn by mn
 
     index_C = 0;
 
@@ -185,7 +174,7 @@ double MPostCal::lowrank_likelihood(vector<int> configure, vector<double> * stat
     for (int i = 0; i < snpCount * num_of_studies; i++) {
         if (configure[i] == 1) {
             for (int j = 0; j < snpCount * num_of_studies; j++) {
-                V(index_C, j) = sigmaMatrix(i, j);
+                V(index_C, j) = sigmaMatrixTran(i, j);
             }
             index_C ++;
         }
@@ -198,7 +187,7 @@ double MPostCal::lowrank_likelihood(vector<int> configure, vector<double> * stat
 
     mat I_AA   = mat(snpCount * num_of_studies, snpCount * num_of_studies, fill::eye);
     mat tmp_CC = mat(causalCount * num_of_studies, causalCount * num_of_studies, fill::eye) + UV;
-    //matDet = det(tmp_CC);
+    matDet = det(tmp_CC);
 
     mat temp2 = V * pinv(tmp_CC);
     mat tmp_AA = I_AA - temp2 * U ;
@@ -206,25 +195,31 @@ double MPostCal::lowrank_likelihood(vector<int> configure, vector<double> * stat
     mat tmpResultMatrix1N = statMatrixtTran * tmp_AA;
     mat tmpResultMatrix11 = tmpResultMatrix1N * statMatrix;
     res = tmpResultMatrix11(0,0);
-
     
     if(matDet==0) {
         cout << "Error the matrix is singular and we fail to fix it." << endl;
         exit(0);
     }
-    */
 
-    //brute force method
+
+    /*
+    //brute force method, replaced by Woodbury
     mat firsttemp = sigmaMatrix * sigmaC;
+
+    cout << "sigmac is \n" << sigmaC << "\n";
+    cout << "U should be \n" << firsttemp << "\n";
+    cout << "V should be \n" << sigmaMatrixTran << "\n";
+
     mat secondtemp = firsttemp * sigmaMatrixTran;
     mat variance = mat(snpCount * num_of_studies, snpCount * num_of_studies, fill::eye) + secondtemp;
-
+    cout << "tmpcc should be \n" << variance << "\n";
     matDet = det(variance);
 
     mat tmpResultMat1N = statMatrixtTran * pinv(variance);
     mat tmpResultMatrix11 = tmpResultMat1N * statMatrix;
     res = tmpResultMatrix11(0,0);
-
+	*/
+	
     /*
      We compute the log of -res/2-log(det) to see if it is too big or not.
      In the case it is too big we just make it a MAX value.
