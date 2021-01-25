@@ -129,7 +129,7 @@ public:
             temp_sigma = kron(temp_sigma, sigma->at(i));
             (*BIG_SIGMA) = (*BIG_SIGMA) + temp_sigma;
         }
-
+        
         //if low rank, BIG_SIGMA = BIG_B, Stat matrix has new distribution
         if(haslowrank == true){
             //construct big B
@@ -170,8 +170,7 @@ public:
 
             *BIG_SIGMA = *BIG_B;
             delete(BIG_B);
-        }	
-
+        }
         post = new MPostCal(BIG_SIGMA, &S_LONG_VEC, snpCount, totalCausalSNP, snpNames, gamma, tau_sqr, sigma_g_squared, num_of_studies, sample_sizes, haslowrank);
     }
 

@@ -155,17 +155,26 @@ double MPostCal::lowrank_likelihood(vector<int> configure, vector<double> * stat
     // In unequal sample size studies, U is adjusted for the sample sizes
     // here we make U = B * sigmaC, this is still kn by mn
     mat U(causalCount * num_of_studies, snpCount * num_of_studies, fill::zeros);
+    
+    /*this is taking up major time as mn*mn matrix, mult, we use a speedup
     mat full_U(causalCount * num_of_studies, snpCount * num_of_studies, fill::zeros);
     full_U = sigmaMatrix * sigmaC;
-    
+    cout << full_U << "\n";
+    */
+
+    mat small_sigma(snpCount * num_of_studies, causalCount * num_of_studies, fill::zeros);
+    mat small_sigmaC(causalCount * num_of_studies, causalCount * num_of_studies, fill::zeros);
     for (int i = 0; i < snpCount * num_of_studies; i++) {
         if (configure[i] == 1) {
             for (int j = 0; j < snpCount * num_of_studies; j++) {
-                U(index_C, j) = full_U(j, i);
+                small_sigma(j, index_C) = sigmaMatrix(j, i);
             }
+            small_sigmaC(index_C, index_C) = sigmaC(i, i);
             index_C++;
         }
     }
+    U = small_sigma * small_sigmaC;
+    U = U.t();
 
     index_C = 0;
 
@@ -205,14 +214,8 @@ double MPostCal::lowrank_likelihood(vector<int> configure, vector<double> * stat
     /*
     //brute force method, replaced by Woodbury
     mat firsttemp = sigmaMatrix * sigmaC;
-
-    cout << "sigmac is \n" << sigmaC << "\n";
-    cout << "U should be \n" << firsttemp << "\n";
-    cout << "V should be \n" << sigmaMatrixTran << "\n";
-
     mat secondtemp = firsttemp * sigmaMatrixTran;
     mat variance = mat(snpCount * num_of_studies, snpCount * num_of_studies, fill::eye) + secondtemp;
-    cout << "tmpcc should be \n" << variance << "\n";
     matDet = det(variance);
 
     mat tmpResultMat1N = statMatrixtTran * pinv(variance);
@@ -309,6 +312,7 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
     }
 
     for(long int i = 0; i < total_iteration; i++) {
+
         //double tmp_likelihood;
         if(haslowrank==true){
             tmp_likelihood = lowrank_likelihood(tempConfigure, stat, sigma_g_squared) + num * log(gamma) + (snpCount-num) * log(1-gamma);
@@ -335,7 +339,7 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
         if(i % 1000 == 0)
             cerr << "\r                                                                 \r" << (double) (i) / (double) total_iteration * 100.0 << "%";
     }
-
+    
     for(int i = 0; i <= maxCausalSNP; i++)
         histValues[i] = exp(histValues[i]-sumLikelihood);
     
