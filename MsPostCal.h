@@ -140,12 +140,15 @@ public:
      */
     double computeTotalLikelihood(vector<double> * stat, double sigma_g_squared) ;
 
+    /*find configuration from iteration in string*/
+    vector<int> findConfig(int iter);
+
     /*
      greedy algorithm to find minimal set
      @param stat is the z-scores
      @param sigma is the correaltion matrix
      */
-    double findOptimalSetGreedy(vector<double> * stat, double sigma_g_squared, vector<char> * pcausalSet, vector<int> *rank,  double inputRho, string outputFileName);
+    vector<char> findOptimalSetGreedy(vector<double> * stat, double sigma_g_squared, vector<int> *rank,  double inputRho, string outputFileName, double cutoff_threshold);
 
     /*
      print the hist file, which is the likelihood of the set containing 0, 1, 2... up to the number of max snps
