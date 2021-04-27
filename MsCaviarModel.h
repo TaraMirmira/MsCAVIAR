@@ -41,11 +41,12 @@ public:
     int num_of_studies;
     vector<double> S_LONG_VEC;
     bool haslowrank = false;
+    double cutoff_threshold;
 
     /*
      consrtuctor for MCaviarModel
      */
-    MCaviarModel(vector<string> ldDir, vector<string> zDir, vector<int> sample_sizes, string outputFileName, int totalCausalSNP, double rho, bool histFlag, double gamma=0.01, double tau_sqr = 0.2, double sigma_g_squared = 5.2) {
+    MCaviarModel(vector<string> ldDir, vector<string> zDir, vector<int> sample_sizes, string outputFileName, int totalCausalSNP, double rho, bool histFlag, double gamma=0.01, double tau_sqr = 0.2, double sigma_g_squared = 5.2, double cutoff_threshold = 0.01) {
         this->histFlag = histFlag;
         this->rho = rho;
         this->gamma = gamma;
@@ -56,6 +57,7 @@ public:
         this->tau_sqr = tau_sqr;
         this->sigma_g_squared = sigma_g_squared;
         this->sample_sizes = sample_sizes;
+        this->cutoff_threshold = cutoff_threshold;
 
         //fileSize(ldFile, tmpSize);
         sigma      = new vector<mat>;
@@ -92,7 +94,7 @@ public:
 
         num_of_studies = snpNames->size();
         snpCount = (*snpNames)[0].size();
-        pcausalSet = new vector<char>(snpCount);
+        pcausalSet = new vector<char>(snpCount,'0');
         rank = new vector<int>(snpCount, 0);
 
         for (int i = 0; i < z_score->size(); i++){
@@ -136,9 +138,11 @@ public:
             mat* BIG_B = new mat(snpCount*num_of_studies, snpCount*num_of_studies,fill::zeros);
             for(int i = 0; i<num_of_studies; i++){
                 mat* tmpmat = new mat(snpCount,snpCount,fill::zeros);
-                *tmpmat = BIG_SIGMA->submat(i*snpCount,i*snpCount,(i+1)*snpCount-1,(i+1)*snpCount-1);
+                *tmpmat = BIG_SIGMA->submat(i*snpCount,i*snpCount,(i+1)*snpCount-1,(i+1)*snpCount-1);                
                 mat* tmpOmega = new mat(snpCount,snpCount,fill::zeros);
                 tmpOmega = eigen_decomp(tmpmat,snpCount);
+
+                *tmpOmega = abs(*tmpOmega);
 
                 //construct B
                 mat trans_Q = trans(*tmpmat);
@@ -180,7 +184,7 @@ public:
      @return no return
      */
     void run() {
-        post->findOptimalSetGreedy(&S_LONG_VEC, sigma_g_squared, pcausalSet, rank, rho, outputFileName);
+        (*pcausalSet) = post->findOptimalSetGreedy(&S_LONG_VEC, sigma_g_squared, rank, rho, outputFileName, cutoff_threshold);
     }
 
     /*
