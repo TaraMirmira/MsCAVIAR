@@ -73,7 +73,7 @@ int main( int argc, char *argv[]  ){
     int oc = 0;
     double tau_sqr = 0.52;
     double sigma_g_squared = 5.2;
-    double cutoff_threshold = 0.01;
+    double cutoff_threshold = 0;
 
     string ldFile = "";
     string zFile  = "";
@@ -97,7 +97,7 @@ int main( int argc, char *argv[]  ){
                 cout << "-t TAU_SQR, --tau_sqr=TAU_SQR  set the heterogeneity (t^2) across studies, default is 0.52" << endl;
                 cout << "-s SIGMA_G_SQR, --sigma_g_squared=SIGMA_G_SQR    set the NCP variance for the smallest study, default is 5.2" << endl;
                 cout << "-n SAMPLE_SIZE, --sample_size    REQUIRED: set the sample sizes (integer) of individual studies, format: enter 50,100 for study 1 with 50 sample size and 2 with 100" << endl;
-                cout << "-a THRESHOLD    set the threshold for cut-off (default 0.01) when we select the final causal set; if the SNP has a posterior below the threshold, we do not include it in the set" << endl;
+                cout << "-a THRESHOLD    set the threshold for cut-off (default 0) when we select the final causal set; if the SNP has a posterior below the threshold, we do not include it in the set" << endl;
                 exit(0);
 
             // required options: LD and Z-score filenames, and output file name
