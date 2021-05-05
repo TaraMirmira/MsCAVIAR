@@ -38,6 +38,8 @@ The other command line options are listed below. We do not recommend changing -g
 
 **-f** allows MsCAVIAR to output a _hist.txt_ file that includes the likelihood of the true set containing 0, 1, 2, ... up to the maximum number of causal SNPs that the user sets using the -c option. We recommend using this option when the user is unsure about the number of causal snps in the study, and then adjust -c according to the likelihoods in the histogram file. For example, if the histogram file contains 5 numbers: "1.21973e-150"  "2.54771e-09"  "0.614328"  "0.334465"  "0.051207", it means that the causal set most likely contains 2 snps, with L(c=2) = 0.61. But since L(c=3)=0.33 indicates that c=3 is also relatively likely, we recommend the user to rerun the program using -c 2 or -c 3 as the parameters to get more accurate results.
 
+**-a** sets the threshold for cut-off when we select the final causal set: if a snp has a probability less than the threshold, then we do not include it in the set. Note that a high cutoff threshold may result in the set having a confidence less than 95%.
+
 ```
 -r RHO, --rho-prob=RHO     set $rho$ probability (default 0.95)
 -g GAMMA, --gamma      set $gamma$ the prior of a SNP being causal (default 0.01)
