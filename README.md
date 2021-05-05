@@ -45,6 +45,8 @@ The other command line options are listed below. We do not recommend changing -g
 -f 1               to out the probaility of different number of causal SNP
 -t TAU_SQR, --tau_sqr=TAU_SQR  set the heterogeneity (t^2) across studies, default is 0.52
 -s SIGMA_G_SQR, --sigma_g_squared=SIGMA_G_SQR    set the NCP variance for the smallest study, default is 5.2
+-a THRESHOLD    set the threshold for cut-off when we select the final causal set, default is 0
+
 ```
 
 ### Scripts used to generate paper results
