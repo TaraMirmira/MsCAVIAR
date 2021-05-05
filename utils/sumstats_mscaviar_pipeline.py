@@ -15,6 +15,7 @@ import argparse, glob, multiprocessing, os, subprocess
 import pick_loci as locus_picker
 import generate_ld_and_mscaviar_files as ld_generator
 import ld_prune as pruner
+import reconcile_studies as reconciler
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__))) + '/'
 
 
@@ -106,43 +107,51 @@ def run_ld_generation_process(args, fname):
 #    Then generate MsCAVIAR -l and -z files and run MsCAVIAR, making sure the
 #    original order of studies is maintained.
 def run_ld_prune_and_mscaviar_on_dir(args, ldir, mscaviar_results_dir):
-	# set up input and output file names
-	locus_dir_path = args.outdir + ldir
-	locus_fnames = glob.glob(locus_dir_path + '/*.ld')
-	this_args = args
-	this_args.infiles = locus_fnames
-	this_outdir = locus_dir_path + '/pruned/'
-	if not os.path.isdir(this_outdir):
-		os.makedirs(this_outdir)
-	this_args.output_prefix = this_outdir
-	# run LD pruning
-	pruner.ld_prune_main(this_args)
+	try:
+		# set up input and output file names
+		locus_dir_path = args.outdir + ldir
+		locus_fnames = glob.glob(locus_dir_path + '/*.ld')
+		this_args = args
+		this_args.infiles = locus_fnames
+		this_outdir = locus_dir_path + '/pruned/'
+		if not os.path.isdir(this_outdir):
+			os.makedirs(this_outdir)
+		this_args.output_prefix = this_outdir
+		reconciler.reconcile_main(this_args)  # ensure same SNPs between studies
+		pruner.ld_prune_main(this_args)  # run LD pruning
 
-	# for MsCAVIAR, we must make sure the files are in their original order
-	sumstats_fnames = [i.split('/')[-1].split('.')[0] for i in args.infiles]
-	ordered_znames = []
-	for fname in sumstats_fnames:
-		ordered_znames.extend(glob.glob(this_outdir + '*' + fname + '*.zscores'))
-	ordered_ldnames = [i.split('.zscores')[0] + '.ld' for i in ordered_znames]
-	ordered_popsizes = ','.join([str(i) for i in args.population_sizes])  # MsCAVIAR input format
-	# now create the -l and -z files for MsCAVIAR
-	zfiles_list_file = this_outdir + 'zfiles.txt'
-	ldfiles_list_file = this_outdir + 'ldfiles.txt'
-	with(open(zfiles_list_file, 'w')) as outfile:
-		for zname in ordered_znames:
-			outfile.write(zname + '\n')
-	with(open(ldfiles_list_file, 'w')) as outfile:
-		for ldname in ordered_ldnames:
-			outfile.write(ldname + '\n')
-	# finally, run MsCAVIAR
-	mscaviar_output_prefix = this_outdir + 'mscaviar_results_' + ldir
-	subprocess.Popen([args.mscaviar_loc, '-l', ldfiles_list_file, '-z',
-		zfiles_list_file, '-r', str(args.rho), '-t', str(args.tau_sqr),
-		'-c', str(args.max_causal), '-n', ordered_popsizes,
-		'-o', mscaviar_output_prefix]).wait()
-	# copy results into easier-to-find directory
-	subprocess.Popen(['cp', mscaviar_output_prefix + '_set.txt',
-		mscaviar_results_dir]).wait()
+		# for MsCAVIAR, we must make sure the files are in their original order
+		sumstats_fnames = [i.split('/')[-1].split('.')[0] for i in args.infiles]
+		ordered_znames = []
+		for fname in sumstats_fnames:
+			ordered_znames.extend(glob.glob(this_outdir + '*' + fname + '*.zscores'))
+		ordered_ldnames = [i.split('.zscores')[0] + '.ld' for i in ordered_znames]
+		ordered_popsizes = ','.join([str(i) for i in args.population_sizes])  # MsCAVIAR input format
+		# now create the -l and -z files for MsCAVIAR
+		zfiles_list_file = this_outdir + 'zfiles.txt'
+		ldfiles_list_file = this_outdir + 'ldfiles.txt'
+		with(open(zfiles_list_file, 'w')) as outfile:
+			for zname in ordered_znames:
+				outfile.write(zname + '\n')
+		with(open(ldfiles_list_file, 'w')) as outfile:
+			for ldname in ordered_ldnames:
+				outfile.write(ldname + '\n')
+		# finally, run MsCAVIAR
+		mscaviar_output_prefix = this_outdir + 'mscaviar_results_' + ldir
+		subprocess.Popen([args.mscaviar_loc, '-l', ldfiles_list_file, '-z',
+			zfiles_list_file, '-r', str(args.rho), '-t', str(args.tau_sqr),
+			'-c', str(args.max_causal), '-n', ordered_popsizes,
+			'-o', mscaviar_output_prefix]).wait()
+		# copy results into easier-to-find directory
+		subprocess.Popen(['cp', mscaviar_output_prefix + '_set.txt',
+			mscaviar_results_dir]).wait()
+		return 0
+	except:
+		print('Error in process for ' + str(fname))
+		err = sys.exc_info()
+		tb = traceback.format_exception(err[0], err[1], err[2])
+		print(''.join(tb) + '\n')
+		sys.stdout.flush()
 
 
 def main():
@@ -178,8 +187,15 @@ def main():
 		os.makedirs(mscaviar_results_dir)
 	locus_dirs = next(os.walk(args.outdir))[1]
 	locus_dirs = [i for i in locus_dirs if 'locus_chromosome_' in i]
-	for ldir in locus_dirs:
-		run_ld_prune_and_mscaviar_on_dir(args, ldir, mscaviar_results_dir)
+	if args.processes > 1:
+		pool = multiprocessing.Pool(processes = args.processes)
+		for ldir in locus_dirs:
+			pool.apply_async(run_ld_prune_and_mscaviar_on_dir, (args, ldir, mscaviar_results_dir,))
+		pool.close()
+		pool.join()
+	else:
+		for ldir in locus_dirs:
+			run_ld_prune_and_mscaviar_on_dir(args, ldir, mscaviar_results_dir)
 
 
 if __name__ == '__main__':

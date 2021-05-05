@@ -47,10 +47,17 @@ The other command line options are listed below. We do not recommend changing -g
 -s SIGMA_G_SQR, --sigma_g_squared=SIGMA_G_SQR    set the NCP variance for the smallest study, default is 5.2
 ```
 
-### Utility Scripts for locus picking, LD generation & pruning, and running MsCAVIAR
+### Scripts used to generate paper results
+
+We have created an additional repository that hosts the scripts used to generate the results shown in the paper: https://github.com/nlapier2/mscaviar_replication
+
+
+### Utility scripts for locus picking, LD generation & pruning, and running MsCAVIAR
 
 In the utils/ folder, you will find several scripts that can be used to pick loci from summary statistics files (based on Z-scores and number of SNPs), generate LD matrices for those SNPs based on 1000 Genomes project data, prune SNPs in perfect LD with one another, and run MsCAVIAR on all those loci. The individual scripts for doing this are available, as is a script that runs the full pipeline (sumstats_mscaviar_pipeline.py).
 
 This pipeline script is ideal for relatively straightforward fine-mapping analyses from summary statistics using MsCAVIAR, e.g. selecting loci based on Z-score levels from multiple summary statistics files with well-defined ethnic groups. It handles all the intermediate file generation and coordinates the SNPs between both studies for steps such as locus creation and LD pruning.
+
+Please note that these scripts are simply included as an example -- you may or may not have to modify them to work for your data.
 
 For more instructions, see the utils/ folder.
