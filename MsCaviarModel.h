@@ -46,7 +46,7 @@ public:
     /*
      consrtuctor for MCaviarModel
      */
-    MCaviarModel(vector<string> ldDir, vector<string> zDir, vector<int> sample_sizes, string outputFileName, int totalCausalSNP, double rho, bool histFlag, double gamma=0.01, double tau_sqr = 0.2, double sigma_g_squared = 5.2, double cutoff_threshold = 0.01) {
+    MCaviarModel(vector<string> ldDir, vector<string> zDir, vector<int> sample_sizes, string outputFileName, int totalCausalSNP, double rho, bool histFlag, double gamma=0.01, double tau_sqr = 0.2, double sigma_g_squared = 5.2, double cutoff_threshold = 0) {
         this->histFlag = histFlag;
         this->rho = rho;
         this->gamma = gamma;

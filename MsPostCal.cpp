@@ -293,7 +293,7 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
         total_iteration = total_iteration + nCr(snpCount, i);
     cout << "Max Causal = " << maxCausalSNP << endl;
 
-    clock_t start = clock();
+    //clock_t start = clock();
     vector<int> configure;
     int num;
 
@@ -304,6 +304,7 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
     else{
         chunksize = total_iteration/1000;
     }
+    int curr_iter = 0;
 
     #pragma omp parallel for schedule(static,chunksize) private(configure,num)
     for(long int i = 0; i < total_iteration; i++) {
@@ -344,14 +345,16 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
                 #pragma omp critical
                 postValues[j] = addlogSpace(postValues[j], tmp_likelihood * configure[j]);
             }
-        }
-        
-        if(i % 1000 == 0)
+        }        
+
+        #pragma omp critical
+        if(i % 1000 == 0 and i > curr_iter){
             cerr << "\r                                                                 \r" << (double) (i) / (double) total_iteration * 100.0 << "%";
+            curr_iter = i;
+        }
     }
 
-    cout << "\ncomputing likelihood of all configurations took  " << (float)(clock()-start)/CLOCKS_PER_SEC << "seconds.\n";
-
+    //cout << "\ncomputing likelihood of all configurations took  " << (float)(clock()-start)/CLOCKS_PER_SEC << "seconds.\n";
 
     for(int i = 0; i <= maxCausalSNP; i++)
         histValues[i] = exp(histValues[i]-sumLikelihood);
@@ -387,6 +390,14 @@ vector<char> MPostCal::findOptimalSetGreedy(vector<double> * stat, double sigma_
         (*rank)[i] = items[i].index1;
     
     double threshold = cutoff_threshold;
+    /*
+    if(snpCount > 30){
+        threshold = 1/(double)snpCount;
+    }
+    else{
+        threshold = 0.1/(double)snpCount;
+    }
+    */
     cout << "threshold is " << threshold << "\n";
     
     while(rho < inputRho){
