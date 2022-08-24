@@ -20,6 +20,8 @@ def gen_ld_parseargs():    # handle user arguments
 		help = 'Helper script from PAINTOR to get 1000genomes LD using infile.')
 	parser.add_argument('--thousand_genomes', default='AUTO',
 		help = '1000 genomes data location.')
+	parser.add_argument('--thousand_genomes_samples_file', default='AUTO',
+		help = 'location for integrated_call_samples_v3.20130502.ALL.panel.')
 	args = parser.parse_args()
 	return args
 
@@ -39,7 +41,7 @@ def gen_mscaviar_locus_file(output_prefix):
 		with(open(output_prefix + '.zscores', 'w')) as outfile:
 			for line in infile:
 				splits = line.strip().split()
-				rsid, zscore = splits[2], splits[5]
+				rsid, zscore = splits[3], splits[5]
 				outfile.write(rsid + '\t' + zscore + '\n')
 
 
@@ -48,7 +50,7 @@ def gen_ld_main(args = {}):
 		args = gen_ld_parseargs()
 	# set default locations
 	if args.helper_script == 'AUTO':
-		args.helper_script = __location__ + '1000genomes/CalcLD_1KG_VCF.py'
+		args.helper_script = __location__ + '/CalcLD_1KG_VCF.py'
 	if args.thousand_genomes == 'AUTO':
 		args.thousand_genomes = __location__ + '1000genomes/'
 	if not args.thousand_genomes.endswith('/'):
@@ -58,7 +60,7 @@ def gen_ld_main(args = {}):
 
 	# now run the helper script to get the 1000genomes LD file
 	ref_loc = glob.glob(args.thousand_genomes + 'ALL.chr' + args.chromosome + '.*.vcf.gz')[0]
-	map_loc = args.thousand_genomes + 'integrated_call_samples_v3.20130502.ALL.panel'
+	map_loc = args.thousand_genomes_samples_file + 'integrated_call_samples_v3.20130502.ALL.panel'
 	subprocess.Popen(['python', args.helper_script, '--locus', args.infile,
 		'--reference', ref_loc, '--map', map_loc, '--effect_allele', 'A1',
 		'--alt_allele', 'A0', '--population', args.population, '--Zhead', 'Zscore',

@@ -35,6 +35,8 @@ public:
     vector<string> ldDir;
     vector<string> zDir;
     vector<int> sample_sizes;
+    vector<int> num_causal; //number of causal snps in each study
+    vector<int> num_snps; //number of snps in each study
     string outputFileName;
     double tau_sqr;
     double sigma_g_squared;
@@ -46,7 +48,7 @@ public:
     /*
      consrtuctor for MCaviarModel
      */
-    MCaviarModel(vector<string> ldDir, vector<string> zDir, vector<int> sample_sizes, string outputFileName, int totalCausalSNP, double rho, bool histFlag, double gamma=0.01, double tau_sqr = 0.2, double sigma_g_squared = 5.2, double cutoff_threshold = 0) {
+    MCaviarModel(vector<string> ldDir, vector<string> zDir, vector<int> sample_sizes, vector<int> num_causal, string outputFileName, int totalCausalSNP, double rho, bool histFlag, double gamma=0.01, double tau_sqr = 0.2, double sigma_g_squared = 5.2, double cutoff_threshold = 0) {
         this->histFlag = histFlag;
         this->rho = rho;
         this->gamma = gamma;
@@ -57,6 +59,7 @@ public:
         this->tau_sqr = tau_sqr;
         this->sigma_g_squared = sigma_g_squared;
         this->sample_sizes = sample_sizes;
+	this-> num_causal = num_causal;
         this->cutoff_threshold = cutoff_threshold;
 
         //fileSize(ldFile, tmpSize);
@@ -77,6 +80,7 @@ public:
             importDataSecondColumn(z_file, temp_z);
 
             int numSnps = sqrt(temp_LD->size());
+	    num_snps.push_back(numSnps);
             mat temp_sig;
             temp_sig = mat(numSnps, numSnps);
             for (int i = 0; i < numSnps; i++){

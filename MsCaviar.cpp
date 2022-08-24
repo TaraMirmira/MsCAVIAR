@@ -79,8 +79,9 @@ int main( int argc, char *argv[]  ){
     string zFile  = "";
     string outputFileName = "";
     string sample_s = "";
+    string num_causal_s = "";
 
-    while ((oc = getopt(argc, argv, "vhl:o:z:r:c:g:f:t:s:n:a:")) != -1) {
+    while ((oc = getopt(argc, argv, "vhl:o:z:r:c:k:g:f:t:s:n:a:")) != -1) {
         switch (oc) {
             case 'v':
                 cout << "Version 0.1\n" << endl;
@@ -93,6 +94,7 @@ int main( int argc, char *argv[]  ){
                 cout << "-r RHO, --rho-prob=RHO     set $rho$ probability (default 0.95)" << endl;
                 cout << "-g GAMMA, --gamma      set $gamma$ the prior of a SNP being causal (default 0.01)" << endl;
                 cout << "-c causal          set the maximum number of causal SNPs (default 3)" << endl;
+                cout << "-k NUM_CAUSAL        number of causal SNPs per study (default 3)" << endl;
                 cout << "-f 1               to out the probaility of different number of causal SNP" << endl;
                 cout << "-t TAU_SQR, --tau_sqr=TAU_SQR  set the heterogeneity (t^2) across studies, default is 0.52" << endl;
                 cout << "-s SIGMA_G_SQR, --sigma_g_squared=SIGMA_G_SQR    set the NCP variance for the smallest study, default is 5.2" << endl;
@@ -119,6 +121,9 @@ int main( int argc, char *argv[]  ){
                 break;
             case 'c':
                 totalCausalSNP = atoi(optarg);
+                break;
+            case 'k':
+                num_causal_s = string(optarg);
                 break;
             case 'g':
                 gamma = atof(optarg);
@@ -150,13 +155,22 @@ int main( int argc, char *argv[]  ){
     vector<string> ldDir = read_dir(ldFile);
     vector<string> zDir = read_dir(zFile);
     vector<int> sample_sizes = read_sigma(sample_s);
+    vector<int> num_causal;
+
+    if (num_causal_s != "") {
+	for (int i = 0; i < sample_sizes.size(); i++) {
+	    num_causal.push_back(3);
+	}
+    } else {
+        num_causal = read_sigma(num_causal_s);
+    }
 
     if (ldDir.size() != zDir.size() || ldDir.size() != sample_sizes.size()) {
         cout << "Error: LD files, Z files, and sample sizes do not match in number" << endl;
         exit(1);
     }
 
-    MCaviarModel Mcaviar(ldDir, zDir, sample_sizes, outputFileName, totalCausalSNP, rho, histFlag, gamma, tau_sqr, sigma_g_squared, cutoff_threshold);
+    MCaviarModel Mcaviar(ldDir, zDir, sample_sizes, num_causal, outputFileName, totalCausalSNP, rho, histFlag, gamma, tau_sqr, sigma_g_squared, cutoff_threshold);
     Mcaviar.run();
     Mcaviar.finishUp();
     return 0;
