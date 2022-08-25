@@ -15,7 +15,7 @@
 using namespace arma;
 
 // calibrate for sample size imbalance
-mat MPostCal::construct_diagC(vector<int> configure) {
+mat MPostCal::construct_diagC(vector<int> configure, vector<int> all_configs) {
     mat Identity_M = mat(num_of_studies, num_of_studies, fill::eye);
     mat Matrix_of_sigmaG = mat(num_of_studies, num_of_studies);
     int min_size = * std::min_element(sample_sizes.begin(), sample_sizes.end());
@@ -39,14 +39,14 @@ mat MPostCal::construct_diagC(vector<int> configure) {
     return diagC;
 }
 
-double MPostCal::likelihood(vector<int> configure, vector<double> * stat, double sigma_g_squared) {
+double MPostCal::likelihood(vector<int> configure, vector<int> all_configs, vector<double> * stat, double sigma_g_squared) {
     int causalCount = 0;
     double matDet   = 0;
     double res      = 0;
 
     for(int i = 0; i < snpCount; i++)
         causalCount += configure[i];
-    if(causalCount == 0){
+    if(causalCount == 0){ //TODO how to handle this case for multiple causal vectors
         mat tmpResultMatrixNM = statMatrixtTran * invSigmaMatrix;
         mat tmpResultMatrixNN = tmpResultMatrixNM * statMatrix;
 
@@ -55,7 +55,7 @@ double MPostCal::likelihood(vector<int> configure, vector<double> * stat, double
         return (-res/2-sqrt(abs(matDet)));
     }
 
-    mat sigmaC = construct_diagC(configure);
+    mat sigmaC = construct_diagC(configure, all_configs);
     int index_C = 0;
     mat sigmaMatrixTran = sigmaMatrix.t();
 
@@ -122,7 +122,7 @@ double MPostCal::likelihood(vector<int> configure, vector<double> * stat, double
 }
 
 //here we still use Woodbury matrix, here sigma_matrix is B, and S is updated already
-double MPostCal::lowrank_likelihood(vector<int> configure, vector<double> * stat, double sigma_g_squared) {
+double MPostCal::lowrank_likelihood(vector<int> configure, vector<int> all_configs, vector<double> * stat, double sigma_g_squared) {
     int causalCount = 0;
     double matDet   = 0;
     double res      = 0;
@@ -136,7 +136,7 @@ double MPostCal::lowrank_likelihood(vector<int> configure, vector<double> * stat
         return (-res/2-sqrt(abs(matDet)));
     }
 
-    mat sigmaC = construct_diagC(configure);
+    mat sigmaC = construct_diagC(configure, all_configs);
     int index_C = 0;
     mat sigmaMatrixTran = sigmaMatrix.t();
 
@@ -285,6 +285,15 @@ vector<int> MPostCal::findConfig(int iter) {
     return config;
 }
 
+vector<int> MPostCal::findAllConfigs(vector<int> config) {
+    //TODO this is temporary, must fix
+    vector<int> all_configs;
+    for (int i = 0; i < num_of_studies; i++ ) {
+        all_configs.insert(all_configs.end(), config.begin(), config.end());
+    }
+    return all_configs;
+}
+
 double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squared) {
     double sumLikelihood = 0;
     long int total_iteration = 0 ;
@@ -295,6 +304,7 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 
     //clock_t start = clock();
     vector<int> configure;
+    vector<int> all_configs;
     int num;
 
     int chunksize;
@@ -314,6 +324,8 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
         else{
             num = nextBinary(configure, snpCount);
         }
+
+	all_configs = findAllConfigs(configure);
         
         vector<int> tempConfigure(snpCount*num_of_studies,0);
         num = 0;
@@ -329,12 +341,14 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
                 tempConfigure[snpCount * m + j] = configure[j];
             }
         }
+
+	tempConfigure = all_configs;
         
         if(haslowrank==true){
-            tmp_likelihood = lowrank_likelihood(tempConfigure, stat, sigma_g_squared) + num * log(gamma) + (snpCount-num) * log(1-gamma);
+            tmp_likelihood = lowrank_likelihood(tempConfigure, all_configs, stat, sigma_g_squared) + num * log(gamma) + (snpCount-num) * log(1-gamma);
         }
         else{
-            tmp_likelihood = likelihood(tempConfigure, stat, sigma_g_squared) + num * log(gamma) + (snpCount-num) * log(1-gamma);
+            tmp_likelihood = likelihood(tempConfigure, all_configs, stat, sigma_g_squared) + num * log(gamma) + (snpCount-num) * log(1-gamma);
         }
         
         #pragma omp critical

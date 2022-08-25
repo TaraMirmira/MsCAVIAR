@@ -114,7 +114,7 @@ public:
      :param configure the causal status vector of 0 and 1
      :return diagC is the variance matrix for (lamdaC|C)
      */
-    mat construct_diagC(vector<int> configure);
+    mat construct_diagC(vector<int> configure, vector<int> all_configs);
 
     /*
      compute likelihood of each configuration by Woodbury
@@ -123,7 +123,7 @@ public:
      :param sigma_g_squared the non-centrality param
      :return likelihood of the configuration
      */
-    double likelihood(vector<int> configure, vector<double> * stat, double sigma_g_squared) ;
+    double likelihood(vector<int> configure, vector<int> all_configs, vector<double> * stat, double sigma_g_squared) ;
 
     /*
      compute likelihood for low rank matrices
@@ -132,7 +132,7 @@ public:
      :param sigma_g_squared the non-centrality param
      :return likelihood of the configuration
      */
-    double lowrank_likelihood(vector<int> configure, vector<double> * stat, double sigma_g_squared) ;
+    double lowrank_likelihood(vector<int> configure, vector<int> all_configs, vector<double> * stat, double sigma_g_squared) ;
 
     /*
      find the next binary configuration based on the previous config and size of vector
@@ -146,6 +146,8 @@ public:
 
     /*find configuration from iteration in string*/
     vector<int> findConfig(int iter);
+
+    vector<int> findAllConfigs(vector<int> config);
 
     /*
      greedy algorithm to find minimal set
