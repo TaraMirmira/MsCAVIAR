@@ -28,6 +28,7 @@ public:
     vector<mat> * sigma;
     vector< vector<double> > * z_score;
     vector<char> * pcausalSet;
+    vector<vector<char>> pcausalSets;
     vector<int> * rank;
     bool histFlag;  // to out the probaility of different number of causal SNP
     MPostCal * post;
@@ -36,7 +37,7 @@ public:
     vector<string> zDir;
     vector<int> sample_sizes;
     vector<int> num_causal; //number of causal snps in each study
-    vector<int> num_snps; //number of snps in each study
+    vector<int> num_snps_all; //number of snps in each study
     string outputFileName;
     double tau_sqr;
     double sigma_g_squared;
@@ -80,7 +81,7 @@ public:
             importDataSecondColumn(z_file, temp_z);
 
             int numSnps = sqrt(temp_LD->size());
-	    num_snps.push_back(numSnps);
+	    num_snps_all.push_back(numSnps);
             mat temp_sig;
             temp_sig = mat(numSnps, numSnps);
             for (int i = 0; i < numSnps; i++){
@@ -99,6 +100,9 @@ public:
         num_of_studies = snpNames->size();
         snpCount = (*snpNames)[0].size();
         pcausalSet = new vector<char>(snpCount,'0');
+	for ( int i = 0; i < num_of_studies; i++ ) {
+	    pcausalSets.push_back(vector<char>(num_snps_all[i], '0'));
+	}
         rank = new vector<int>(snpCount, 0);
 
         for (int i = 0; i < z_score->size(); i++){
@@ -120,15 +124,19 @@ public:
         //make positive definite
         for (int i = 0; i < sigma->size(); i++){
             //check for low rank
-            if(arma::rank(sigma->at(i)) < snpCount){
+            //if(arma::rank(sigma->at(i)) < snpCount){
+            if(arma::rank(sigma->at(i)) < num_snps_all[i]){
                 haslowrank = true;
                 std::cout << "study " << i << " has low rank. Implementing low_rank method.\n";
             }
             
-            makeSigmaPositiveSemiDefinite(&(sigma->at(i)), snpCount);
+            //makeSigmaPositiveSemiDefinite(&(sigma->at(i)), snpCount);
+            makeSigmaPositiveSemiDefinite(&(sigma->at(i)), num_snps_all[i]);
         }
 
-        mat* BIG_SIGMA = new mat(snpCount * num_of_studies, snpCount * num_of_studies, fill::zeros);
+        //mat* BIG_SIGMA = new mat(snpCount * num_of_studies, snpCount * num_of_studies, fill::zeros);
+	int num_total_snps = std::accumulate(num_snps_all.begin(), num_snps_all.end(), 0);
+        mat* BIG_SIGMA = new mat(num_total_snps, num_total_snps, fill::zeros);
         for (int i = 0 ; i < num_of_studies; i++){
             mat temp_sigma = mat(num_of_studies , num_of_studies, fill::zeros);
             temp_sigma(i,i) = 1;
@@ -139,10 +147,12 @@ public:
         //if low rank, BIG_SIGMA = BIG_B, Stat matrix has new distribution
         if(haslowrank == true){
             //construct big B
-            mat* BIG_B = new mat(snpCount*num_of_studies, snpCount*num_of_studies,fill::zeros);
+            mat* BIG_B = new mat(num_total_snps, num_total_snps, fill::zeros);
             for(int i = 0; i<num_of_studies; i++){
-                mat* tmpmat = new mat(snpCount,snpCount,fill::zeros);
-                *tmpmat = BIG_SIGMA->submat(i*snpCount,i*snpCount,(i+1)*snpCount-1,(i+1)*snpCount-1);                
+                mat* tmpmat = new mat(num_snps_all[i], num_snps_all[i], fill::zeros);
+		int sum_msubj_until_i = std::accumulate(num_snps_all.begin(), num_snps_all.begin()+i, 0);
+                //*tmpmat = BIG_SIGMA->submat(i*snpCount,i*snpCount,(i+1)*snpCount-1,(i+1)*snpCount-1);                
+                *tmpmat = BIG_SIGMA->submat(sum_msubj_until_i, sum_msubj_until_i, sum_msubj_until_i+num_snps_all[i]-1, sum_msubj_until_i+num_snps_all[i]-1);
                 mat* tmpOmega = new mat(snpCount,snpCount,fill::zeros);
                 tmpOmega = eigen_decomp(tmpmat,snpCount);
 
@@ -160,16 +170,16 @@ public:
                 (*BIG_B) = (*BIG_B) + temp_b;
 
                 //update S_LONG_VEC
-                mat* z_score = new mat(snpCount,1,fill::zeros);
-                for(int j = 0; j < snpCount; j++){
-                    (*z_score)(j,0) = S_LONG_VEC[i*snpCount+j];
+                mat* z_score = new mat(num_snps_all[i],1,fill::zeros);
+                for(int j = 0; j < num_snps_all[i]; j++){ //TODO i am here
+                    (*z_score)(j,0) = S_LONG_VEC[sum_msubj_until_i+j]; //msubj the j does not correspond to j in this for loop, it is just an idx
                 }
 
                 mat tmpS = inv(sqrt_Omega) * trans_Q;
                 mat lowS = tmpS * (*z_score);
 
-                for(int j = 0; j < snpCount; j++){
-                    S_LONG_VEC[i*snpCount+j] = lowS(j,0);
+                for(int j = 0; j < num_snps_all[i]; j++){
+                    S_LONG_VEC[sum_msubj_until_i+j] = lowS(j,0);
                 }
                 delete(tmpmat);
                 delete(tmpOmega);
@@ -179,7 +189,7 @@ public:
             *BIG_SIGMA = *BIG_B;
             delete(BIG_B);
         }
-        post = new MPostCal(BIG_SIGMA, &S_LONG_VEC, snpCount, totalCausalSNP, snpNames, gamma, tau_sqr, sigma_g_squared, num_of_studies, sample_sizes, haslowrank);
+        post = new MPostCal(BIG_SIGMA, &S_LONG_VEC, snpCount, totalCausalSNP, num_causal, snpNames, gamma, tau_sqr, sigma_g_squared, num_of_studies, sample_sizes, num_snps_all, haslowrank);
     }
 
     /*

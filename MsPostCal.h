@@ -39,6 +39,8 @@ private:
     mat statMatrixtTran;
     vector<vector<string> > * SNP_NAME;
     vector<int> sample_sizes;
+    vector<int> num_snps_all;
+    vector<int> num_causal;
 
     //addition in log space
     double addlogSpace(double a, double b) {
@@ -57,7 +59,7 @@ public:
     /*
      constructor
     */
-    MPostCal(mat * BIG_SIGMA, vector<double> * S_LONG_VEC, int snpCount, int MAX_causal, vector<vector<string> > * SNP_NAME, double gamma, double t_squared, double s_squared, int num_of_studies, vector<int> sample_sizes, bool lowrank) {
+    MPostCal(mat * BIG_SIGMA, vector<double> * S_LONG_VEC, int snpCount, int MAX_causal, vector<int> num_causal, vector<vector<string> > * SNP_NAME, double gamma, double t_squared, double s_squared, int num_of_studies, vector<int> sample_sizes, vector<int> num_snps_all, bool lowrank) {
         this->gamma = gamma;
         this->SNP_NAME = SNP_NAME;
         this-> snpCount = snpCount;
@@ -73,6 +75,8 @@ public:
         this-> s_squared = s_squared;
         this-> num_of_studies = num_of_studies;
         this-> sample_sizes = sample_sizes;
+	this-> num_causal = num_causal;
+	this-> num_snps_all = num_snps_all;
         this-> haslowrank = lowrank;
 
         // statMatrix is the z-score matrix of mn*1, m = number of snps, n = num of studies
