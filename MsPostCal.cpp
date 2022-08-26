@@ -1,4 +1,5 @@
 #include <vector>
+#include <unordered_map>
 #include <algorithm>
 #include <set>
 #include <iostream>
@@ -14,27 +15,90 @@
 
 using namespace arma;
 
+vector<vector<int>> MPostCal::get_causal_idxs(vector<int> all_configs) {
+    vector<vector<int>> causal_idxs;
+    for ( int i = 0; i < num_of_studies; i++ ) {
+        vector<int> causal_idxs_studyi;
+        int start_loc = std::accumulate(num_snps_all.begin(), num_snps_all.begin()+i, 0);
+	for ( int j = 0; j < num_snps_all[i]; j++ ) {
+	    if ( all_configs[start_loc + j] == 1 ) {
+                causal_idxs_studyi.push_back(j);
+	    }
+	}
+	causal_idxs.push_back(causal_idxs_studyi);
+    }
+    return causal_idxs;
+}
+
 // calibrate for sample size imbalance
 mat MPostCal::construct_diagC(vector<int> configure, vector<int> all_configs) {
     mat Identity_M = mat(num_of_studies, num_of_studies, fill::eye);
     mat Matrix_of_sigmaG = mat(num_of_studies, num_of_studies);
     int min_size = * std::min_element(sample_sizes.begin(), sample_sizes.end());
 
-    for (int i = 0; i < num_of_studies; i ++) {
+    /*for (int i = 0; i < num_of_studies; i ++) {
         for (int j = 0; j < num_of_studies; j ++) {
             if (i == j) // diagonal: scaled variance
                 Matrix_of_sigmaG(i, j) = s_squared * (double(sample_sizes[i]) / min_size);
             else // off-diagonal: covariance
                 Matrix_of_sigmaG(i, j) = s_squared * sqrt(long(sample_sizes[i]) * long(sample_sizes[j])) / min_size;
         }
-    }    
-    mat temp1 = t_squared * Identity_M + Matrix_of_sigmaG;
-    mat temp2 = mat(snpCount, snpCount, fill::zeros);
-    for(int i = 0; i < snpCount; i++) {
-        if (configure[i] == 1)
-            temp2(i, i) = 1;
+    } */   
+    //mat temp1 = t_squared * Identity_M + Matrix_of_sigmaG;
+    //mat temp1 = Matrix_of_sigmaG;
+    //mat temp2 = mat(snpCount, snpCount, fill::zeros);
+    //for(int i = 0; i < snpCount; i++) {
+    //    if (configure[i] == 1)
+    //       temp2(i, i) = 1;
+    //}
+    vec diagC_main_diag(all_configs.size(), fill::zeros);
+    vector<vector<int>> causal_idxs = get_causal_idxs(all_configs);
+    for ( int i = 0; i < causal_idxs.size(); i++ ) {
+	int start_loc = std::accumulate(num_snps_all.begin(), num_snps_all.begin()+i, 0);
+        for ( int j = 0; j < causal_idxs[i].size(); j++ ) {
+            int causal_pos = causal_idxs[i][j];
+            diagC_main_diag[start_loc + causal_pos] = s_squared * (double(sample_sizes[i]) / min_size);
+	}
     }
-    mat diagC = kron(temp1, temp2);
+
+
+    mat diagC = diagmat(diagC_main_diag);
+    //mat diagC = kron(temp1, temp2);
+    
+    //fill in off diagonal
+    for ( int i = 0; i < causal_idxs.size(); i++ ) {
+	bool causal_in_all = true;
+        int causal_in_0 = causal_idxs[0][i];
+	vector<int> main_diag_pos;
+	main_diag_pos.push_back(causal_in_0);
+        int start_loc = std::accumulate(num_snps_all.begin(), num_snps_all.begin()+i, 0);
+        for ( int j = 1; j < num_of_studies; j ++ ) {
+	    string snp_name = (*SNP_NAME)[0][causal_in_0];
+	    int loc_in_j = (*snp_to_idx_all)[j][snp_name];
+	    if ( all_configs[start_loc + loc_in_j] == 1 ) {
+	       main_diag_pos.push_back(start_loc + loc_in_j);
+	    } else {
+	        causal_in_all = false;
+		continue;
+	    }
+        }
+	if (causal_in_all) {
+            for ( int j = 0; j < main_diag_pos.size(); j++ ) {
+		int first = main_diag_pos[j];
+                for ( int k = 0; k < main_diag_pos.size(); k++ ) {
+                   int second = main_diag_pos[k];
+		   if ( first == second ) {
+                       //main diag position, need to add t_squared
+		       diagC(first, first) += t_squared;
+		   } else {
+		       //off diag pos, need to add s_squared
+		       diagC(first, second) = s_squared * sqrt(long(sample_sizes[i]) * long(sample_sizes[j])) / min_size;
+		       diagC(second, first) = s_squared * sqrt(long(sample_sizes[i]) * long(sample_sizes[j])) / min_size;
+		   }
+		}
+	    }
+	}
+    }
     
     return diagC;
 }

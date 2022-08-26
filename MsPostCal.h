@@ -9,6 +9,7 @@
 #include <math.h>
 #include <string.h>
 #include <vector>
+#include <unordered_map>
 
 #include <armadillo>
 
@@ -38,6 +39,7 @@ private:
     mat statMatrix;
     mat statMatrixtTran;
     vector<vector<string> > * SNP_NAME;
+    vector<unordered_map<string, int>> * snp_to_idx_all;
     vector<int> sample_sizes;
     vector<int> num_snps_all;
     vector<int> num_causal;
@@ -59,9 +61,10 @@ public:
     /*
      constructor
     */
-    MPostCal(mat * BIG_SIGMA, vector<double> * S_LONG_VEC, int snpCount, int MAX_causal, vector<int> num_causal, vector<vector<string> > * SNP_NAME, double gamma, double t_squared, double s_squared, int num_of_studies, vector<int> sample_sizes, vector<int> num_snps_all, bool lowrank) {
+    MPostCal(mat * BIG_SIGMA, vector<double> * S_LONG_VEC, int snpCount, int MAX_causal, vector<int> num_causal, vector<vector<string> > * SNP_NAME, vector<unordered_map<string, int>> * snp_to_idx_all, double gamma, double t_squared, double s_squared, int num_of_studies, vector<int> sample_sizes, vector<int> num_snps_all, bool lowrank) {
         this->gamma = gamma;
         this->SNP_NAME = SNP_NAME;
+	this-> snp_to_idx_all = snp_to_idx_all;
         this-> snpCount = snpCount;
         this-> maxCausalSNP = MAX_causal;
         this-> postValues = new double [snpCount];
@@ -108,6 +111,8 @@ public:
         delete [] histValues;
         delete [] postValues;
     }
+
+    vector<vector<int>> get_causal_idxs(vector<int> all_configs); 
 
     /*
      construct sigma_C by the kronecker product in paper, it is mn by mn. the variance for vec(lambdaC)|vec(C)

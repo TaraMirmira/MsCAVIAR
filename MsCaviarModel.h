@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <unordered_map>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -45,6 +46,7 @@ public:
     vector<double> S_LONG_VEC;
     bool haslowrank = false;
     double cutoff_threshold;
+    vector<unordered_map<string, int>> * snp_to_idx_all;
 
     /*
      consrtuctor for MCaviarModel
@@ -67,6 +69,7 @@ public:
         sigma      = new vector<mat>;
         z_score    = new vector<vector<double> >;
         snpNames   = new vector<vector<string> >;
+	snp_to_idx_all = new vector<unordered_map<string, int>>;
 
         for(int i = 0; i < ldDir.size(); i++) {
             string ld_file = ldDir[i];
@@ -89,6 +92,11 @@ public:
                     temp_sig(i,j) = temp_LD->at(i * numSnps + j);
                 }
             }
+	    unordered_map<string, int> snp_to_idx;
+	    for ( int i = 0; i < temp_names.size(); i++ ) {
+                snp_to_idx[temp_names[i]] = i;
+	    }
+	    snp_to_idx_all->push_back(snp_to_idx);
 
             sigma->push_back(temp_sig);
             snpNames->push_back(temp_names);
@@ -138,10 +146,12 @@ public:
 	int num_total_snps = std::accumulate(num_snps_all.begin(), num_snps_all.end(), 0);
         mat* BIG_SIGMA = new mat(num_total_snps, num_total_snps, fill::zeros);
         for (int i = 0 ; i < num_of_studies; i++){
-            mat temp_sigma = mat(num_of_studies , num_of_studies, fill::zeros);
-            temp_sigma(i,i) = 1;
-            temp_sigma = kron(temp_sigma, sigma->at(i));
-            (*BIG_SIGMA) = (*BIG_SIGMA) + temp_sigma;
+            //mat temp_sigma = mat(num_of_studies , num_of_studies, fill::zeros);
+            //temp_sigma(i,i) = 1;
+            //temp_sigma = kron(temp_sigma, sigma->at(i));
+            //(*BIG_SIGMA) = (*BIG_SIGMA) + temp_sigma;
+	    int sum_msubj_until_i = std::accumulate(num_snps_all.begin(), num_snps_all.begin()+i, 0);
+	    (*BIG_SIGMA).submat(sum_msubj_until_i, sum_msubj_until_i, sum_msubj_until_i+num_snps_all[i]-1, sum_msubj_until_i+num_snps_all[i]-1) = sigma->at(i);
         }
         
         //if low rank, BIG_SIGMA = BIG_B, Stat matrix has new distribution
@@ -153,7 +163,7 @@ public:
 		int sum_msubj_until_i = std::accumulate(num_snps_all.begin(), num_snps_all.begin()+i, 0);
                 //*tmpmat = BIG_SIGMA->submat(i*snpCount,i*snpCount,(i+1)*snpCount-1,(i+1)*snpCount-1);                
                 *tmpmat = BIG_SIGMA->submat(sum_msubj_until_i, sum_msubj_until_i, sum_msubj_until_i+num_snps_all[i]-1, sum_msubj_until_i+num_snps_all[i]-1);
-                mat* tmpOmega = new mat(snpCount,snpCount,fill::zeros);
+                mat* tmpOmega = new mat(num_snps_all[i],num_snps_all[i],fill::zeros);
                 tmpOmega = eigen_decomp(tmpmat,snpCount);
 
                 *tmpOmega = abs(*tmpOmega);
@@ -164,10 +174,11 @@ public:
                 mat B_each = sqrt_Omega * trans_Q;
 
                 //merge to Big B
-                mat temp_b = mat(num_of_studies , num_of_studies, fill::zeros);
-                temp_b(i,i) = 1;
-                temp_b = kron(temp_b, B_each);
-                (*BIG_B) = (*BIG_B) + temp_b;
+                //mat temp_b = mat(num_of_studies , num_of_studies, fill::zeros);
+                //temp_b(i,i) = 1;
+                //temp_b = kron(temp_b, B_each);
+                //(*BIG_B) = (*BIG_B) + temp_b;
+		(*BIG_B).submat(sum_msubj_until_i, sum_msubj_until_i, sum_msubj_until_i+num_snps_all[i]-1, sum_msubj_until_i+num_snps_all[i]-1) = B_each;
 
                 //update S_LONG_VEC
                 mat* z_score = new mat(num_snps_all[i],1,fill::zeros);
@@ -189,7 +200,7 @@ public:
             *BIG_SIGMA = *BIG_B;
             delete(BIG_B);
         }
-        post = new MPostCal(BIG_SIGMA, &S_LONG_VEC, snpCount, totalCausalSNP, num_causal, snpNames, gamma, tau_sqr, sigma_g_squared, num_of_studies, sample_sizes, num_snps_all, haslowrank);
+        post = new MPostCal(BIG_SIGMA, &S_LONG_VEC, snpCount, totalCausalSNP, num_causal, snpNames,snp_to_idx_all, gamma, tau_sqr, sigma_g_squared, num_of_studies, sample_sizes, num_snps_all, haslowrank);
     }
 
     /*
@@ -227,6 +238,7 @@ public:
         delete snpNames;
         delete pcausalSet;
         delete rank;
+	delete snp_to_idx_all;
     }
 };
 
