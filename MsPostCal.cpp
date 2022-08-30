@@ -104,13 +104,15 @@ mat MPostCal::construct_diagC(vector<int> configure, vector<int> all_configs) {
 }
 
 double MPostCal::likelihood(vector<int> configure, vector<int> all_configs, vector<double> * stat, double sigma_g_squared) {
-    int causalCount = 0;
+    //int causalCount = 0;
+    int totalCausalCount = 0;
+    int totalSnpCount = all_configs.size();
     double matDet   = 0;
     double res      = 0;
 
-    for(int i = 0; i < snpCount; i++)
-        causalCount += configure[i];
-    if(causalCount == 0){ //TODO how to handle this case for multiple causal vectors
+    for(int i = 0; i < all_configs.size(); i++)
+        totalCausalCount += configure[i];
+    if(totalCausalCount == 0){ //TODO how to handle this case for multiple causal vectors
         mat tmpResultMatrixNM = statMatrixtTran * invSigmaMatrix;
         mat tmpResultMatrixNN = tmpResultMatrixNM * statMatrix;
 
@@ -125,10 +127,11 @@ double MPostCal::likelihood(vector<int> configure, vector<int> all_configs, vect
 
     // U is kn by mn matrix of columns corresponding to causal SNP in sigmacC
     // In unequal sample size studies, U is adjusted for the sample sizes
-    mat U(causalCount * num_of_studies, snpCount * num_of_studies, fill::zeros);
-    for (int i = 0; i < snpCount * num_of_studies; i++) {
+    //mat U(causalCount * num_of_studies, snpCount * num_of_studies, fill::zeros);
+    mat U(totalCausalCount, totalSnpCount, fill::zeros);
+    for (int i = 0; i < totalSnpCount; i++) {
         if (configure[i] == 1) {
-            for (int j = 0; j < snpCount * num_of_studies; j++) {
+            for (int j = 0; j < totalSnpCount; j++) {
                 U(index_C, j) = sigmaC(i, j);
             }
             index_C ++;
@@ -139,10 +142,11 @@ double MPostCal::likelihood(vector<int> configure, vector<int> all_configs, vect
     
     // V is mn by kn matrix of rows corresponding to causal SNP in sigma
     // In unequal sample size studies, V does not change
-    mat V(causalCount * num_of_studies, snpCount * num_of_studies, fill::zeros);
-    for (int i = 0; i < snpCount * num_of_studies; i++) {
+    //mat V(causalCount * num_of_studies, snpCount * num_of_studies, fill::zeros);
+    mat V(totalCausalCount, totalSnpCount, fill::zeros);
+    for (int i = 0; i < totalSnpCount; i++) {
         if (configure[i] == 1) {
-            for (int j = 0; j < snpCount * num_of_studies; j++) {
+            for (int j = 0; j < totalSnpCount; j++) {
                 V(index_C, j) = sigmaMatrixTran(i, j);
             }
             index_C ++;
@@ -151,15 +155,15 @@ double MPostCal::likelihood(vector<int> configure, vector<int> all_configs, vect
     V = V.t();
 
     // UV = SigmaC * Sigma (kn by kn)
-    mat UV(causalCount * num_of_studies, causalCount * num_of_studies, fill::zeros);
+    mat UV(totalCausalCount, totalCausalCount, fill::zeros);
     UV = U * V;
 
-    mat I_AA   = mat(snpCount, snpCount, fill::eye);
-    mat tmp_CC = mat(causalCount * num_of_studies, causalCount * num_of_studies, fill::eye) + UV;
+    //mat I_AA   = mat(snpCount, snpCount, fill::eye); //can ignore, does not get used here
+    mat tmp_CC = mat(totalCausalCount, totalCausalCount, fill::eye) + UV;
     matDet = det(tmp_CC) * sigmaDet;
 
     mat temp1 = invSigmaMatrix * V;
-    mat temp2 = mat(snpCount * num_of_studies, causalCount * num_of_studies, fill::zeros);
+    mat temp2 = mat(totalSnpCount, totalCausalCount, fill::zeros);
     
     #pragma omp critical
     temp2 = temp1 * pinv(tmp_CC);
@@ -187,13 +191,15 @@ double MPostCal::likelihood(vector<int> configure, vector<int> all_configs, vect
 
 //here we still use Woodbury matrix, here sigma_matrix is B, and S is updated already
 double MPostCal::lowrank_likelihood(vector<int> configure, vector<int> all_configs, vector<double> * stat, double sigma_g_squared) {
-    int causalCount = 0;
+    //int causalCount = 0;
+    int totalCausalCount = 0;
+    int totalSnpCount = all_configs.size();
     double matDet   = 0;
     double res      = 0;
 
-    for(int i = 0; i < snpCount; i++)
-        causalCount += configure[i];
-    if(causalCount == 0){
+    for(int i = 0; i < totalSnpCount; i++)
+        totalCausalCount += configure[i];
+    if(totalCausalCount == 0){ //TODO ok for now, but need to think
         mat tmpResultMatrixNN = statMatrixtTran * statMatrix;
         res = tmpResultMatrixNN(0,0);
         matDet = 1;
@@ -206,13 +212,13 @@ double MPostCal::lowrank_likelihood(vector<int> configure, vector<int> all_confi
 
     // In unequal sample size studies, U is adjusted for the sample sizes
     // here we make U = B * sigmaC, this is still kn by mn
-    mat U(causalCount * num_of_studies, snpCount * num_of_studies, fill::zeros);
+    mat U(totalCausalCount, totalSnpCount, fill::zeros);
 
-    mat small_sigma(snpCount * num_of_studies, causalCount * num_of_studies, fill::zeros);
-    mat small_sigmaC(causalCount * num_of_studies, causalCount * num_of_studies, fill::zeros);
-    for (int i = 0; i < snpCount * num_of_studies; i++) {
+    mat small_sigma(totalSnpCount, totalCausalCount, fill::zeros);
+    mat small_sigmaC(totalCausalCount, totalCausalCount, fill::zeros);
+    for (int i = 0; i < totalSnpCount; i++) {
         if (configure[i] == 1) {
-            for (int j = 0; j < snpCount * num_of_studies; j++) {
+            for (int j = 0; j < totalSnpCount; j++) {
                 small_sigma(j, index_C) = sigmaMatrix(j, i);
             }
             small_sigmaC(index_C, index_C) = sigmaC(i, i);
@@ -225,10 +231,10 @@ double MPostCal::lowrank_likelihood(vector<int> configure, vector<int> all_confi
     index_C = 0;
 
     // here V is B_trans, this is mn by kn
-    mat V(causalCount * num_of_studies, snpCount * num_of_studies, fill::zeros);
-    for (int i = 0; i < snpCount * num_of_studies; i++) {
+    mat V(totalCausalCount, totalSnpCount, fill::zeros);
+    for (int i = 0; i < totalSnpCount; i++) {
         if (configure[i] == 1) {
-            for (int j = 0; j < snpCount * num_of_studies; j++) {
+            for (int j = 0; j < totalSnpCount; j++) {
                 V(index_C, j) = sigmaMatrixTran(i, j);
             }
             index_C ++;
@@ -237,14 +243,14 @@ double MPostCal::lowrank_likelihood(vector<int> configure, vector<int> all_confi
     V = V.t();
 
     // UV = B * SigmaC * Btrans (kn by kn)
-    mat UV(causalCount * num_of_studies, causalCount * num_of_studies, fill::zeros);
+    mat UV(totalCausalCount, totalCausalCount, fill::zeros);
     UV = U * V;
 
-    mat I_AA   = mat(snpCount * num_of_studies, snpCount * num_of_studies, fill::eye);
-    mat tmp_CC = mat(causalCount * num_of_studies, causalCount * num_of_studies, fill::eye) + UV;
+    mat I_AA   = mat(totalSnpCount, totalSnpCount, fill::eye);
+    mat tmp_CC = mat(totalCausalCount, totalCausalCount, fill::eye) + UV;
     matDet = det(tmp_CC);
 
-    mat temp2 = mat(snpCount * num_of_studies, causalCount * num_of_studies, fill::zeros);
+    mat temp2 = mat(totalSnpCount, totalCausalCount, fill::zeros);
     #pragma omp critical
     temp2 = V * pinv(tmp_CC);
 
@@ -346,6 +352,7 @@ vector<int> MPostCal::findConfig(int iter) {
     for(int i = 0; i < times; i++){
         temp = nextBinary(config, snpCount);
     }
+    printf("num causal in this config is %d\n", temp);
     return config;
 }
 
