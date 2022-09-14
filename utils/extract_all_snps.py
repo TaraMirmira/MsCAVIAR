@@ -13,11 +13,11 @@ num_files = len(lines)
 
 count = 0
 assert(len(lines) >= 2)
-df_all_pos = pd.read_csv(lines[0].strip(), sep=" ")[["pos"]][3:]
+df_all_pos = pd.read_csv(lines[0].strip(), sep=" ")[["pos"]]
 print(df_all_pos.shape)
 for idx in range(1, len(lines)):
     count += 1
-    df_next = pd.read_csv(lines[idx].strip(), sep = " ")[["pos"]][:18]
+    df_next = pd.read_csv(lines[idx].strip(), sep = " ")[["pos"]]
     print(df_next.shape)
     df_all_pos = df_all_pos.merge(df_next, how="outer", on="pos")
     print(df_all_pos)
@@ -32,13 +32,9 @@ print(len(lines))
 
 for idx in range(len(lines)):
     df = pd.read_csv(lines[idx].strip(), sep=" ")[["rsid","pos"]]
-    if idx == 0:
-        df = df[3:]
-    else:
-        df = df[:18]
     print(df)
     df_all_pos = df_all_pos.merge(df, on="pos", how="outer")
-    col_label = "rsid" + str(idx)
+    col_label = "study" + str(idx)
     df_all_pos.rename(columns={"rsid":col_label}, inplace=True)
 
 df_all_pos.sort_values("pos", inplace=True, ignore_index=True)
@@ -60,7 +56,7 @@ def mk_idx(col):
 
 print("num files", num_files)
 for i in range(num_files):
-    col_label = "rsid" + str(i)
+    col_label = "study" + str(i)
     print("fixing", col_label)
     na_idxs = df_all_pos[col_label].isna()
     not_na = df_all_pos[col_label].notna()
@@ -69,3 +65,4 @@ for i in range(num_files):
     df_all_pos[col_label][na_idxs] = -1
 
 print(df_all_pos)
+df_all_pos.to_csv("eur_afr_20_samples_snpmapinfo.txt", sep=',', header=False, index=False)

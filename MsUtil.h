@@ -48,6 +48,12 @@ double min(double a, double b) ;
 long int nCr(int n, int r) ;
 
 /*
+ * import data from snp map file
+ */
+void importSnpMap(string snpMapFile, int numCols, vector<string> * firstCol, vector<vector<int>> * remainingCols);
+
+
+/*
  import data from file
  */
 void importData(string fileName, vector<double> *& vector);

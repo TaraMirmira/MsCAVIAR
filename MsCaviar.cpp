@@ -77,11 +77,12 @@ int main( int argc, char *argv[]  ){
 
     string ldFile = "";
     string zFile  = "";
+    string snpMapFile = "";
     string outputFileName = "";
     string sample_s = "";
     string num_causal_s = "";
 
-    while ((oc = getopt(argc, argv, "vhl:o:z:r:c:k:g:f:t:s:n:a:")) != -1) {
+    while ((oc = getopt(argc, argv, "vhl:o:z:m:r:c:k:g:f:t:s:n:a:")) != -1) {
         switch (oc) {
             case 'v':
                 cout << "Version 0.1\n" << endl;
@@ -91,6 +92,7 @@ int main( int argc, char *argv[]  ){
                 cout << "-o OUTFILE, --out=OUTFILE  specify the output file" << endl;
                 cout << "-l LDFile, --ld_file=LDFILE    REQUIRED: the ld input file that contains paths to ld files" << endl;
                 cout << "-z ZFile, --z_file=ZFILE   REQUIRED: the z-score and rsID file that contains paths to z files" << endl;
+		cout << "-m snpMapFile --m=SNPMAPFILE REQUIRED: maps indexes to SNPs in each study" <<endl;
                 cout << "-r RHO, --rho-prob=RHO     set $rho$ probability (default 0.95)" << endl;
                 cout << "-g GAMMA, --gamma      set $gamma$ the prior of a SNP being causal (default 0.01)" << endl;
                 cout << "-c causal          set the maximum number of causal SNPs (default 3)" << endl;
@@ -112,6 +114,8 @@ int main( int argc, char *argv[]  ){
             case 'z':
                 zFile = string(optarg);
                 break;
+            case 'm':
+		snpMapFile = string(optarg);
             case 'n':
                 sample_s = string(optarg);
                 break;
@@ -147,7 +151,7 @@ int main( int argc, char *argv[]  ){
         }
     }
 
-    if (ldFile == "" or zFile == "" or outputFileName == "" or sample_s == "") {
+    if (ldFile == "" or zFile == "" or snpMapFile == "" or outputFileName == "" or sample_s == "") {
         cout << "Error: -l, -z, -o, and -n are required" << endl;
         exit(1);
     }
@@ -170,7 +174,7 @@ int main( int argc, char *argv[]  ){
         exit(1);
     }
 
-    MCaviarModel Mcaviar(ldDir, zDir, sample_sizes, num_causal, outputFileName, totalCausalSNP, rho, histFlag, gamma, tau_sqr, sigma_g_squared, cutoff_threshold);
+    MCaviarModel Mcaviar(ldDir, zDir, snpMapFile, sample_sizes, num_causal, outputFileName, totalCausalSNP, rho, histFlag, gamma, tau_sqr, sigma_g_squared, cutoff_threshold);
     Mcaviar.run();
     Mcaviar.finishUp();
     return 0;

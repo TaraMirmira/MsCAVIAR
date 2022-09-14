@@ -49,6 +49,37 @@ void importData(string fileName, vector<double> *& vector) {
     file.close();
 }
 
+
+void importSnpMap(string snpMapFile, int numCols, vector<string> * firstCol, vector<vector<int>> * remainingCols) {
+    fstream f;
+    f.open(snpMapFile, ios::in);
+    if ( !f.is_open()) {
+       cout << "Could not open file\n";
+       exit(1);
+    }
+
+    vector<string> row;
+    string line, word;
+  
+    while (getline(f, line)) {
+  
+        row.clear();
+  
+        stringstream s(line);
+  
+	for ( int i = 0; i < numCols; i++ ) {
+            getline(s, word, ',');
+	    if ( i == 0 ) {
+                firstCol->push_back(word);
+	    } else {
+                (*remainingCols)[i-1].push_back(stoi(word));
+	    }
+	}
+    }  
+    f.close();
+}
+
+
 /*
  The column index starts by 1 in this implemenation
  */

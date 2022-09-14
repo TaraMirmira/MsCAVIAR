@@ -36,6 +36,7 @@ public:
     vector< vector<string> > * snpNames;
     vector<string> ldDir;
     vector<string> zDir;
+    string snpMapFile;
     vector<int> sample_sizes;
     vector<int> num_causal; //number of causal snps in each study
     vector<int> num_snps_all; //number of snps in each study
@@ -47,16 +48,19 @@ public:
     bool haslowrank = false;
     double cutoff_threshold;
     vector<unordered_map<string, int>> * snp_to_idx_all;
+    vector<vector<int>> idx_to_snp_map;
+    vector<string> all_snp_pos;
 
     /*
      consrtuctor for MCaviarModel
      */
-    MCaviarModel(vector<string> ldDir, vector<string> zDir, vector<int> sample_sizes, vector<int> num_causal, string outputFileName, int totalCausalSNP, double rho, bool histFlag, double gamma=0.01, double tau_sqr = 0.2, double sigma_g_squared = 5.2, double cutoff_threshold = 0) {
+    MCaviarModel(vector<string> ldDir, vector<string> zDir, string snpMapFile, vector<int> sample_sizes, vector<int> num_causal, string outputFileName, int totalCausalSNP, double rho, bool histFlag, double gamma=0.01, double tau_sqr = 0.2, double sigma_g_squared = 5.2, double cutoff_threshold = 0) {
         this->histFlag = histFlag;
         this->rho = rho;
         this->gamma = gamma;
         this->ldDir = ldDir;
         this->zDir  = zDir;
+	this->snpMapFile = snpMapFile;
         this->outputFileName = outputFileName;
         this->totalCausalSNP = totalCausalSNP;
         this->tau_sqr = tau_sqr;
@@ -70,6 +74,7 @@ public:
         z_score    = new vector<vector<double> >;
         snpNames   = new vector<vector<string> >;
 	snp_to_idx_all = new vector<unordered_map<string, int>>;
+
 
         for(int i = 0; i < ldDir.size(); i++) {
             string ld_file = ldDir[i];
@@ -98,6 +103,9 @@ public:
 	    }
 	    snp_to_idx_all->push_back(snp_to_idx);
 
+	    vector<int> idx_to_snp_studyi;
+	    idx_to_snp_map.push_back(idx_to_snp_studyi);
+
             sigma->push_back(temp_sig);
             snpNames->push_back(temp_names);
             z_score->push_back(temp_z);
@@ -106,6 +114,9 @@ public:
         }
 
         num_of_studies = snpNames->size();
+
+	importSnpMap(snpMapFile, num_of_studies+1, &all_snp_pos, &idx_to_snp_map);
+
         snpCount = (*snpNames)[0].size();
         pcausalSet = new vector<char>(snpCount,'0');
 	for ( int i = 0; i < num_of_studies; i++ ) {
