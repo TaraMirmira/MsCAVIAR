@@ -47,7 +47,7 @@ public:
     vector<double> S_LONG_VEC;
     bool haslowrank = false;
     double cutoff_threshold;
-    vector<unordered_map<string, int>> * snp_to_idx_all;
+    vector<unordered_map<string, int>> snp_to_idx_all;
     vector<vector<int>> idx_to_snp_map;
     vector<string> all_snp_pos;
 
@@ -73,7 +73,6 @@ public:
         sigma      = new vector<mat>;
         z_score    = new vector<vector<double> >;
         snpNames   = new vector<vector<string> >;
-	snp_to_idx_all = new vector<unordered_map<string, int>>;
 
 
         for(int i = 0; i < ldDir.size(); i++) {
@@ -101,7 +100,7 @@ public:
 	    for ( int i = 0; i < temp_names.size(); i++ ) {
                 snp_to_idx[temp_names[i]] = i;
 	    }
-	    snp_to_idx_all->push_back(snp_to_idx);
+	    snp_to_idx_all.push_back(snp_to_idx);
 
 	    vector<int> idx_to_snp_studyi;
 	    idx_to_snp_map.push_back(idx_to_snp_studyi);
@@ -211,7 +210,7 @@ public:
             *BIG_SIGMA = *BIG_B;
             delete(BIG_B);
         }
-        post = new MPostCal(BIG_SIGMA, &S_LONG_VEC, snpCount, totalCausalSNP, num_causal, snpNames,snp_to_idx_all, gamma, tau_sqr, sigma_g_squared, num_of_studies, sample_sizes, num_snps_all, haslowrank);
+        post = new MPostCal(BIG_SIGMA, &S_LONG_VEC, snpCount, totalCausalSNP, num_causal, snpNames,snp_to_idx_all, gamma, tau_sqr, sigma_g_squared, num_of_studies, sample_sizes, num_snps_all, haslowrank, idx_to_snp_map, all_snp_pos);
     }
 
     /*
@@ -249,7 +248,6 @@ public:
         delete snpNames;
         delete pcausalSet;
         delete rank;
-	delete snp_to_idx_all;
     }
 };
 

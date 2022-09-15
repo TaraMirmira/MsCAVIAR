@@ -39,10 +39,12 @@ private:
     mat statMatrix;
     mat statMatrixtTran;
     vector<vector<string> > * SNP_NAME;
-    vector<unordered_map<string, int>> * snp_to_idx_all;
+    vector<unordered_map<string, int>> snp_to_idx_all;
     vector<int> sample_sizes;
     vector<int> num_snps_all;
     vector<int> num_causal;
+    vector<vector<int>> idx_to_snp_map;
+    vector<string> all_snp_pos;
 
     //addition in log space
     double addlogSpace(double a, double b) {
@@ -61,7 +63,7 @@ public:
     /*
      constructor
     */
-    MPostCal(mat * BIG_SIGMA, vector<double> * S_LONG_VEC, int snpCount, int MAX_causal, vector<int> num_causal, vector<vector<string> > * SNP_NAME, vector<unordered_map<string, int>> * snp_to_idx_all, double gamma, double t_squared, double s_squared, int num_of_studies, vector<int> sample_sizes, vector<int> num_snps_all, bool lowrank) {
+    MPostCal(mat * BIG_SIGMA, vector<double> * S_LONG_VEC, int snpCount, int MAX_causal, vector<int> num_causal, vector<vector<string> > * SNP_NAME, vector<unordered_map<string, int>> snp_to_idx_all, double gamma, double t_squared, double s_squared, int num_of_studies, vector<int> sample_sizes, vector<int> num_snps_all, bool lowrank, vector<vector<int>> idx_to_snp_map, vector<string> all_snp_pos) {
         this->gamma = gamma;
         this->SNP_NAME = SNP_NAME;
 	this-> snp_to_idx_all = snp_to_idx_all;
@@ -81,6 +83,8 @@ public:
 	this-> num_causal = num_causal;
 	this-> num_snps_all = num_snps_all;
         this-> haslowrank = lowrank;
+	this-> idx_to_snp_map = idx_to_snp_map;
+	this-> all_snp_pos = all_snp_pos;
 
         // statMatrix is the z-score matrix of mn*1, m = number of snps, n = num of studies
         statMatrix = mat (snpCount * num_of_studies, 1);

@@ -74,7 +74,7 @@ mat MPostCal::construct_diagC(vector<int> configure, vector<int> all_configs) {
         int start_loc = std::accumulate(num_snps_all.begin(), num_snps_all.begin()+i, 0);
         for ( int j = 1; j < num_of_studies; j ++ ) {
 	    string snp_name = (*SNP_NAME)[0][causal_in_0];
-	    int loc_in_j = (*snp_to_idx_all)[j][snp_name];
+	    int loc_in_j = snp_to_idx_all[j][snp_name];
 	    if ( all_configs[start_loc + loc_in_j] == 1 ) {
 	       main_diag_pos.push_back(start_loc + loc_in_j);
 	    } else {
@@ -369,9 +369,12 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
     double sumLikelihood = 0;
     long int total_iteration = 0 ;
 
+    int unionSnpCount = all_snp_pos.size();
     for(long int i = 0; i <= maxCausalSNP; i++)
-        total_iteration = total_iteration + nCr(snpCount, i);
+        //total_iteration = total_iteration + nCr(snpCount, i);
+        total_iteration = total_iteration + nCr(unionSnpCount, i);
     cout << "Max Causal = " << maxCausalSNP << endl;
+    cout << "Union Snp Count = " << unionSnpCount << endl;
 
     //clock_t start = clock();
     vector<int> configure;
@@ -393,15 +396,54 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
             configure = findConfig(i);
         }
         else{
-            num = nextBinary(configure, snpCount);
+            //num = nextBinary(configure, snpCount);
+            num = nextBinary(configure, unionSnpCount);
         }
 
 	all_configs = findAllConfigs(configure);
         
-        vector<int> tempConfigure(snpCount*num_of_studies,0);
+        int totalSnpCount = all_configs.size();
+        vector<int> tempConfigure(totalSnpCount, 0);
+	
+	const int numCausal = std::accumulate(configure.begin(), configure.end(), 0);
+	vector<int> causal_locs;
+	for ( int i = 0; i < unionSnpCount; i++ ) {
+            if ( configure[i] == 1 ) {
+	        causal_locs.push_back(i);
+	    }    
+	}
+        
+
+	int causal_idx_per_study[num_of_studies][numCausal];
+	int causal_bool_per_study[num_of_studies][numCausal];
+	for ( int i = 0; i < num_of_studies; i++ ) {
+            for ( int j = 0; j < numCausal; j++ ) {
+                if (idx_to_snp_map[i][causal_locs[j]] >= 0) {
+		    causal_idx_per_study[i][j] = idx_to_snp_map[i][causal_locs[j]];
+		    causal_bool_per_study[i][j] = 1;
+		}
+	    }	    
+	}
+        
+        int num_additional_configs[numCausal];
+        for ( int i = 0; i < numCausal; i++ ) {
+            int sum_col = 0;
+	    for ( int j = 0; j < num_of_studies; j++ ) {
+                if ( causal_bool_per_study[j][i] == 1 ) {
+                    sum_col += 1;
+		}
+	    }
+	    if ( sum_col > 1 ) {
+                num_additional_configs[i] = (int)(pow(2, sum_col) - 1);
+	    }
+	}	
+	int total_additional_configs = accumulate(num_additional_configs , num_additional_configs+numCausal , 0);
+ 	
+
+        double tmp_likelihood = 0;
+	/*
         num = 0;
         int sizec = configure.size();
-        double tmp_likelihood = 0;
 
         for(int k = 0; k < sizec; k++){
             if(configure[k] == 1) num += 1;
@@ -412,6 +454,7 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
                 tempConfigure[snpCount * m + j] = configure[j];
             }
         }
+        */
 
 	tempConfigure = all_configs;
         
