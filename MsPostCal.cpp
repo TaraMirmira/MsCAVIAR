@@ -389,6 +389,7 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
         chunksize = total_iteration/1000;
     }
     int curr_iter = 0;
+    int totalSnpCount = std::accumulate(num_snps_all.begin(), num_snps_all.end(), 0);
 
     #pragma omp parallel for schedule(static,chunksize) private(configure,num)
     for(long int i = 0; i < total_iteration; i++) {
@@ -402,10 +403,9 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 
 	all_configs = findAllConfigs(configure);
         
-        int totalSnpCount = all_configs.size();
         vector<int> tempConfigure(totalSnpCount, 0);
 	
-	const int numCausal = std::accumulate(configure.begin(), configure.end(), 0);
+	int numCausal = std::accumulate(configure.begin(), configure.end(), 0);
 	vector<int> causal_locs;
 	for ( int i = 0; i < unionSnpCount; i++ ) {
             if ( configure[i] == 1 ) {
@@ -413,19 +413,25 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 	    }    
 	}
         
+	
+        vector<int> startConfigure(totalSnpCount, 0);
 
-	int causal_idx_per_study[num_of_studies][numCausal];
-	int causal_bool_per_study[num_of_studies][numCausal];
+
+	int causal_idx_per_study[2][3]; //2 = num of studies, 3 = max causal TODO this is hardcoded for now
+	int causal_bool_per_study[2][3];
 	for ( int i = 0; i < num_of_studies; i++ ) {
             for ( int j = 0; j < numCausal; j++ ) {
-                if (idx_to_snp_map[i][causal_locs[j]] >= 0) {
-		    causal_idx_per_study[i][j] = idx_to_snp_map[i][causal_locs[j]];
+		int loc_in_studyi = idx_to_snp_map[i][causal_locs[j]];
+		int studyi_offset = std::accumulate(num_snps_all.begin(), num_snps_all.begin()+i, 0);
+                if (loc_in_studyi >= 0) {
+		    causal_idx_per_study[i][j] = loc_in_studyi;
 		    causal_bool_per_study[i][j] = 1;
+		    startConfigure[studyi_offset + loc_in_studyi] = 1;
 		}
 	    }	    
 	}
         
-        int num_additional_configs[numCausal];
+        int num_additional_configs[3];
         for ( int i = 0; i < numCausal; i++ ) {
             int sum_col = 0;
 	    for ( int j = 0; j < num_of_studies; j++ ) {
@@ -438,7 +444,29 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 	    }
 	}	
 	int total_additional_configs = accumulate(num_additional_configs , num_additional_configs+numCausal , 0);
+
+	vector<int> nextConfigure(startConfigure); //makes a copy of startConfigure as nextConfigure
  	
+	for ( int i = 0; i < numCausal; i++ ) {
+            //num additional configs at this causal loc
+	    int num_additional_loc_i = num_additional_configs[i];
+	    int bmask = num_additional_loc_i;
+	    for ( int j = 1; j <= num_additional_loc_i; j++ ) {
+		for ( int k = 0; k < num_of_studies; k++ ) {
+                    int studyk_offset = std::accumulate(num_snps_all.begin(), num_snps_all.begin()+k, 0);
+		    if ( causal_bool_per_study[k][i] == 1 ) {
+			int loc_in_studyk = causal_idx_per_study[k][i];
+                        nextConfigure[studyk_offset + loc_in_studyk] = bmask & 0x1;
+			bmask = bmask >> 1;
+			//TODO insert likelihood computation here
+		    } else {
+                        continue;
+		    }
+	        }
+	    }
+	}
+
+        
 
         double tmp_likelihood = 0;
 	/*

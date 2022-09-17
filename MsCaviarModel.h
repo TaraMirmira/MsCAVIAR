@@ -25,7 +25,7 @@ public:
     double rho;
     double gamma;
     int snpCount;
-    int totalCausalSNP;
+    const int totalCausalSNP;
     vector<mat> * sigma;
     vector< vector<double> > * z_score;
     vector<char> * pcausalSet;
@@ -43,7 +43,7 @@ public:
     string outputFileName;
     double tau_sqr;
     double sigma_g_squared;
-    int num_of_studies;
+    const int num_of_studies;
     vector<double> S_LONG_VEC;
     bool haslowrank = false;
     double cutoff_threshold;
@@ -54,7 +54,7 @@ public:
     /*
      consrtuctor for MCaviarModel
      */
-    MCaviarModel(vector<string> ldDir, vector<string> zDir, string snpMapFile, vector<int> sample_sizes, vector<int> num_causal, string outputFileName, int totalCausalSNP, double rho, bool histFlag, double gamma=0.01, double tau_sqr = 0.2, double sigma_g_squared = 5.2, double cutoff_threshold = 0) {
+    MCaviarModel(vector<string> ldDir, vector<string> zDir, string snpMapFile, vector<int> sample_sizes, vector<int> num_causal, string outputFileName, const int totalCausalSNP, double rho, bool histFlag, double gamma=0.01, double tau_sqr = 0.2, double sigma_g_squared = 5.2, double cutoff_threshold = 0) : totalCausalSNP(totalCausalSNP), num_of_studies(ldDir.size()) {
         this->histFlag = histFlag;
         this->rho = rho;
         this->gamma = gamma;
@@ -62,7 +62,7 @@ public:
         this->zDir  = zDir;
 	this->snpMapFile = snpMapFile;
         this->outputFileName = outputFileName;
-        this->totalCausalSNP = totalCausalSNP;
+//        this->totalCausalSNP = totalCausalSNP;
         this->tau_sqr = tau_sqr;
         this->sigma_g_squared = sigma_g_squared;
         this->sample_sizes = sample_sizes;
@@ -112,7 +112,7 @@ public:
             delete temp_LD;
         }
 
-        num_of_studies = snpNames->size();
+//        num_of_studies(snpNames->size());
 
 	importSnpMap(snpMapFile, num_of_studies+1, &all_snp_pos, &idx_to_snp_map);
 

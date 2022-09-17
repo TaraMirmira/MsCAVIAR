@@ -25,13 +25,13 @@ private:
     double * postValues;    //the posterior value for each SNP being causal
     double * histValues;    //the probability of the number of causal SNPs, we make the histogram of the causal SNPs
     int snpCount;        //total number of variants (SNP) in a locus
-    int maxCausalSNP;    //maximum number of causal variants to consider in a locus
+    const int maxCausalSNP;    //maximum number of causal variants to consider in a locus
     double sigmaDet;    //determinant of matrix
 
     double totalLikeLihoodLOG; //Compute the total log likelihood of all causal status (by likelihood we use prior)
     double t_squared;    //tau^2 (heterogeneity)
     double s_squared;    //sigma_g^2 (heritability)
-    int num_of_studies;
+    const int num_of_studies;
     bool haslowrank = false;
 
     mat sigmaMatrix;
@@ -63,12 +63,12 @@ public:
     /*
      constructor
     */
-    MPostCal(mat * BIG_SIGMA, vector<double> * S_LONG_VEC, int snpCount, int MAX_causal, vector<int> num_causal, vector<vector<string> > * SNP_NAME, vector<unordered_map<string, int>> snp_to_idx_all, double gamma, double t_squared, double s_squared, int num_of_studies, vector<int> sample_sizes, vector<int> num_snps_all, bool lowrank, vector<vector<int>> idx_to_snp_map, vector<string> all_snp_pos) {
+    MPostCal(mat * BIG_SIGMA, vector<double> * S_LONG_VEC, int snpCount, const int MAX_causal, vector<int> num_causal, vector<vector<string> > * SNP_NAME, vector<unordered_map<string, int>> snp_to_idx_all, double gamma, double t_squared, double s_squared, const int num_of_studies, vector<int> sample_sizes, vector<int> num_snps_all, bool lowrank, vector<vector<int>> idx_to_snp_map, vector<string> all_snp_pos) : maxCausalSNP(MAX_causal),num_of_studies(num_of_studies){
         this->gamma = gamma;
         this->SNP_NAME = SNP_NAME;
 	this-> snp_to_idx_all = snp_to_idx_all;
         this-> snpCount = snpCount;
-        this-> maxCausalSNP = MAX_causal;
+        //this-> maxCausalSNP = MAX_causal;
         this-> postValues = new double [snpCount];
         for(int i = 0; i < snpCount; i++)
             this->postValues[i] = 0;
@@ -78,7 +78,7 @@ public:
         this-> totalLikeLihoodLOG = 0;
         this-> t_squared = t_squared;
         this-> s_squared = s_squared;
-        this-> num_of_studies = num_of_studies;
+        //this-> num_of_studies = num_of_studies;
         this-> sample_sizes = sample_sizes;
 	this-> num_causal = num_causal;
 	this-> num_snps_all = num_snps_all;

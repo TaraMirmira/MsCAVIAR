@@ -160,6 +160,7 @@ int main( int argc, char *argv[]  ){
     vector<string> zDir = read_dir(zFile);
     vector<int> sample_sizes = read_sigma(sample_s);
     vector<int> num_causal;
+    static const int finalTotalCausalSNP = totalCausalSNP;
 
     if (num_causal_s != "") {
 	for (int i = 0; i < sample_sizes.size(); i++) {
@@ -174,7 +175,7 @@ int main( int argc, char *argv[]  ){
         exit(1);
     }
 
-    MCaviarModel Mcaviar(ldDir, zDir, snpMapFile, sample_sizes, num_causal, outputFileName, totalCausalSNP, rho, histFlag, gamma, tau_sqr, sigma_g_squared, cutoff_threshold);
+    MCaviarModel Mcaviar(ldDir, zDir, snpMapFile, sample_sizes, num_causal, outputFileName, finalTotalCausalSNP, rho, histFlag, gamma, tau_sqr, sigma_g_squared, cutoff_threshold);
     Mcaviar.run();
     Mcaviar.finishUp();
     return 0;
