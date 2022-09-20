@@ -49,6 +49,7 @@ mat MPostCal::construct_diagC(vector<int> configure, int numCausal, int causal_i
     }
 
     mat diagC = diagmat(diagC_main_diag);
+    diagC.print(std::cout);
     //mat diagC = kron(temp1, temp2);
     
     //adjust off diagonals to have sigma^2 when commonly causal in two studies
@@ -428,7 +429,7 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
             for ( int j = 0; j < numCausal; j++ ) {
 		int loc_in_studyi = idx_to_snp_map[i][causal_locs[j]];
 		int studyi_offset = std::accumulate(num_snps_all.begin(), num_snps_all.begin()+i, 0);
-                if (loc_in_studyi >= 0) {
+                if (loc_in_studyi >= 0) { //means it exists in study i
 		    causal_idx_per_study[i][j] = loc_in_studyi;
 		    causal_bool_per_study[i][j] = 1;
 		    startConfigure[studyi_offset + loc_in_studyi] = 1;
@@ -461,12 +462,15 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 	    for ( int j = 1; j <= num_additional_loc_i; j++ ) {
 	    int bmask = j;
 	        vector<int> nextConfigure(startConfigure); //makes a copy of startConfigure as nextConfigure
+		int causal_bool_per_study_for_config[2][3];
 		for ( int k = 0; k < num_of_studies; k++ ) {
                     int studyk_offset = std::accumulate(num_snps_all.begin(), num_snps_all.begin()+k, 0);
 		    printf("studyk offset %d\n", studyk_offset);
-		    if ( causal_bool_per_study[k][i] == 1 ) {
+		    if ( causal_bool_per_study[k][i] == 1 ) { //if it exists in study
 			int loc_in_studyk = causal_idx_per_study[k][i];
-                        nextConfigure[studyk_offset + loc_in_studyk] = bmask & 0x1;
+			int causal_val = bmask & 0x1;
+			causal_bool_per_study_for_config[k][i] = causal_val;
+                        nextConfigure[studyk_offset + loc_in_studyk] = causal_val;
 			bmask = bmask >> 1;
 		    } else {
                         continue;
@@ -475,7 +479,8 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 		printVec(nextConfigure);
                 //TODO insert likelihood computation here
                 double tmp_likelihood = 0;
-		mat sigmaC = construct_diagC(nextConfigure, numCausal, causal_idx_per_study, causal_bool_per_study);
+		mat sigmaC = construct_diagC(nextConfigure, numCausal, causal_idx_per_study, causal_bool_per_study_for_config);
+		sigmaC.print(std::cout);
 
                 if(haslowrank==true){
                   tmp_likelihood = lowrank_likelihood(nextConfigure, stat, sigma_g_squared, sigmaC) + num * log(gamma) + (snpCount-num) * log(1-gamma);
