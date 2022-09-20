@@ -29,7 +29,6 @@ public:
     vector<mat> * sigma;
     vector< vector<double> > * z_score;
     vector<char> * pcausalSet;
-    vector<vector<char>> pcausalSets;
     vector<int> * rank;
     bool histFlag;  // to out the probaility of different number of causal SNP
     MPostCal * post;
@@ -116,12 +115,13 @@ public:
 
 	importSnpMap(snpMapFile, num_of_studies+1, &all_snp_pos, &idx_to_snp_map);
 
+	int totalSnpCount = std::accumulate(num_snps_all.begin(), num_snps_all.end(), 0);
+
         snpCount = (*snpNames)[0].size();
-        pcausalSet = new vector<char>(snpCount,'0');
-	for ( int i = 0; i < num_of_studies; i++ ) {
-	    pcausalSets.push_back(vector<char>(num_snps_all[i], '0'));
-	}
-        rank = new vector<int>(snpCount, 0);
+        pcausalSet = new vector<char>(totalSnpCount,'0');
+
+
+        rank = new vector<int>(totalSnpCount, 0);
 
         for (int i = 0; i < z_score->size(); i++){
             for(int j = 0; j < (*z_score)[i].size(); j++){
@@ -174,7 +174,7 @@ public:
                 //*tmpmat = BIG_SIGMA->submat(i*snpCount,i*snpCount,(i+1)*snpCount-1,(i+1)*snpCount-1);                
                 *tmpmat = BIG_SIGMA->submat(sum_msubj_until_i, sum_msubj_until_i, sum_msubj_until_i+num_snps_all[i]-1, sum_msubj_until_i+num_snps_all[i]-1);
                 mat* tmpOmega = new mat(num_snps_all[i],num_snps_all[i],fill::zeros);
-                tmpOmega = eigen_decomp(tmpmat,snpCount);
+                tmpOmega = eigen_decomp(tmpmat,num_snps_all[i]);
 
                 *tmpOmega = abs(*tmpOmega);
 
@@ -231,14 +231,23 @@ public:
         ofstream outputFile;
         string outFileNameSet = string(outputFileName)+"_set.txt";
         outputFile.open(outFileNameSet.c_str());
-        for(int i = 0; i < snpCount; i++) {
+	int start_offset = 0;
+	int end_offset = num_snps_all[0];
+	for ( int s = 0; s < num_of_studies; s++ ) {
+          for(int i = start_offset; i < end_offset; i++) {
             if((*pcausalSet)[i] == '1')
                 outputFile << (*snpNames)[0][i] << endl;
-        }
+          }
+	  outputFile << "End study" << endl;
+	  start_offset = end_offset;
+	  end_offset += num_snps_all[s];
+	}
         post->printPost2File(string(outputFileName)+"_post.txt");
+	/* commenting out for now
         //outputs the histogram data to file
         if(histFlag)
             post->printHist2File(string(outputFileName)+"_hist.txt");
+	    */
     }
 
     // destructor

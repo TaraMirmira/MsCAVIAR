@@ -22,6 +22,7 @@ class MPostCal{
 private:
 
     double gamma;        // the probability of SNP being causal
+    int totalSnpCount;
     double * postValues;    //the posterior value for each SNP being causal
     double * histValues;    //the probability of the number of causal SNPs, we make the histogram of the causal SNPs
     int snpCount;        //total number of variants (SNP) in a locus
@@ -68,8 +69,10 @@ public:
         this->SNP_NAME = SNP_NAME;
 	this-> snp_to_idx_all = snp_to_idx_all;
         this-> snpCount = snpCount;
+	this-> totalSnpCount = std::accumulate(num_snps_all.begin(), num_snps_all.end(), 0);
         //this-> maxCausalSNP = MAX_causal;
-        this-> postValues = new double [snpCount];
+        //this-> postValues = new double [snpCount];
+        this-> postValues = new double [totalSnpCount];
         for(int i = 0; i < snpCount; i++)
             this->postValues[i] = 0;
         this-> histValues = new double [MAX_causal+1];
@@ -87,14 +90,14 @@ public:
 	this-> all_snp_pos = all_snp_pos;
 
         // statMatrix is the z-score matrix of mn*1, m = number of snps, n = num of studies
-        statMatrix = mat (snpCount * num_of_studies, 1);
-        statMatrixtTran = mat (1, snpCount * num_of_studies);
-        for(int i = 0; i < snpCount * num_of_studies; i++) {
+        statMatrix = mat (totalSnpCount, 1);
+        statMatrixtTran = mat (1, totalSnpCount);
+        for(int i = 0; i < totalSnpCount; i++) {
             statMatrix(i,0) = (*S_LONG_VEC)[i];
             statMatrixtTran(0,i) = (*S_LONG_VEC)[i];
         }
         // sigmaMatrix is diagonal matrix of sigma matrices for each study i, same for invSigmaMatrix, sigmaDet
-        sigmaMatrix = mat (snpCount * num_of_studies, snpCount * num_of_studies);
+        sigmaMatrix = mat (totalSnpCount, totalSnpCount);
         sigmaMatrix = (*BIG_SIGMA);
         /*
         std::default_random_engine generator;
@@ -116,14 +119,13 @@ public:
         delete [] postValues;
     }
 
-    vector<vector<int>> get_causal_idxs(vector<int> all_configs); 
 
     /*
      construct sigma_C by the kronecker product in paper, it is mn by mn. the variance for vec(lambdaC)|vec(C)
      :param configure the causal status vector of 0 and 1
      :return diagC is the variance matrix for (lamdaC|C)
      */
-    mat construct_diagC(vector<int> configure, vector<int> all_configs);
+    mat construct_diagC(vector<int> configure, int numCausal, int causal_idx_per_study[2][3], int causal_bool_per_study[2][3]);
 
     /*
      compute likelihood of each configuration by Woodbury
@@ -132,7 +134,7 @@ public:
      :param sigma_g_squared the non-centrality param
      :return likelihood of the configuration
      */
-    double likelihood(vector<int> configure, vector<int> all_configs, vector<double> * stat, double sigma_g_squared) ;
+    double likelihood(vector<int> configure, vector<double> * stat, double sigma_g_squared, mat sigmaC) ;
 
     /*
      compute likelihood for low rank matrices
@@ -141,7 +143,7 @@ public:
      :param sigma_g_squared the non-centrality param
      :return likelihood of the configuration
      */
-    double lowrank_likelihood(vector<int> configure, vector<int> all_configs, vector<double> * stat, double sigma_g_squared) ;
+    double lowrank_likelihood(vector<int> configure, vector<double> * stat, double sigma_g_squared, mat sigmaC) ;
 
     /*
      find the next binary configuration based on the previous config and size of vector

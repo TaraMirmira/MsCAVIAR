@@ -47,6 +47,9 @@ double min(double a, double b) ;
  */
 long int nCr(int n, int r) ;
 
+void printVec(vector<int> v);
+
+
 /*
  * import data from snp map file
  */
