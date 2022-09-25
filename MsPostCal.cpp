@@ -15,6 +15,25 @@
 
 using namespace arma;
 
+double MPostCal::log_prior(vector<int> configure, int numCausal, int causal_bool_per_study[2][3]) {
+  if (num_of_studies > 2) {
+    cout << "This prior does not work for more than 2 studies yet\n";
+    exit(1);
+  } 
+  double p_of_c = 0;
+  int num_1_in_either = 0;
+  for ( int i = 0; i < numCausal; i++ ) {
+    if (causal_bool_per_study[0][i] == 1 or causal_bool_per_study[1][i] == 1 ) {
+      p_of_c = log(gamma);
+      num_1_in_either += 1;
+    } 
+  }
+  p_of_c += ( unionSnpCount - num_1_in_either ) * log(1 - gamma);
+  printf("prior is %f\n", p_of_c);
+  printf("num of 1 in either is %d\n", num_1_in_either);
+  
+  return p_of_c;
+}
 
 // calibrate for sample size imbalance
 mat MPostCal::construct_diagC(vector<int> configure, int numCausal, int causal_idx_per_study[2][3], int causal_bool_per_study[2][3]) {
@@ -395,7 +414,7 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
                   double res = tmpResultMatrixNN(0,0);
                   double matDet = 1;
                   double lrl = (-res/2-sqrt(abs(matDet))); //lrl = low rank likelihood
-                  tmp_likelihood = lrl + num * log(gamma) + (snpCount-num) * log(1-gamma);
+                  tmp_likelihood = lrl + unionSnpCount * log(1-gamma);
                 }
                 else{
 		  mat tmpResultMatrixNM = statMatrixtTran * invSigmaMatrix;
@@ -403,8 +422,8 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 
                   double res = tmpResultMatrixNN(0,0);
                   double matDet = sigmaDet;
-                  double l = (-res/2-sqrt(abs(matDet)));
-                   tmp_likelihood = l + num * log(gamma) + (snpCount-num) * log(1-gamma);
+                  double ll = (-res/2-sqrt(abs(matDet)));
+                  tmp_likelihood = ll + unionSnpCount * log(1-gamma);
                  }
 
                 #pragma omp critical
@@ -483,10 +502,10 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 		sigmaC.print(std::cout);
 
                 if(haslowrank==true){
-                  tmp_likelihood = lowrank_likelihood(nextConfigure, stat, sigma_g_squared, sigmaC) + num * log(gamma) + (snpCount-num) * log(1-gamma);
+                  tmp_likelihood = lowrank_likelihood(nextConfigure, stat, sigma_g_squared, sigmaC) + log_prior(nextConfigure, numCausal, causal_bool_per_study_for_config); //TODO prior
                 }
                 else{
-                   tmp_likelihood = likelihood(nextConfigure, stat, sigma_g_squared, sigmaC) + num * log(gamma) + (snpCount-num) * log(1-gamma);
+                   tmp_likelihood = likelihood(nextConfigure, stat, sigma_g_squared, sigmaC) + log_prior(nextConfigure, numCausal, causal_bool_per_study_for_config);
                  }
         
                 #pragma omp critical

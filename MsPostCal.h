@@ -46,6 +46,7 @@ private:
     vector<int> num_causal;
     vector<vector<int>> idx_to_snp_map;
     vector<string> all_snp_pos;
+    int unionSnpCount;
 
     //addition in log space
     double addlogSpace(double a, double b) {
@@ -88,6 +89,7 @@ public:
         this-> haslowrank = lowrank;
 	this-> idx_to_snp_map = idx_to_snp_map;
 	this-> all_snp_pos = all_snp_pos;
+	this-> unionSnpCount = all_snp_pos.size();
 
         // statMatrix is the z-score matrix of mn*1, m = number of snps, n = num of studies
         statMatrix = mat (totalSnpCount, 1);
@@ -119,6 +121,10 @@ public:
         delete [] postValues;
     }
 
+    /*
+     * Calculate prior probability of given configuration vector
+     * */
+    double log_prior(vector<int> configure, int numCaual, int causal_bool_per_study[2][3]);
 
     /*
      construct sigma_C by the kronecker product in paper, it is mn by mn. the variance for vec(lambdaC)|vec(C)
