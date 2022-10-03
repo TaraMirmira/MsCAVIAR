@@ -161,6 +161,8 @@ public:
      */
     double computeTotalLikelihood(vector<double> * stat, double sigma_g_squared) ;
 
+    bool checkOR(int causal_bool_per_study_for_config[2][3], const int num_of_studies, int numCausal);
+
     /*find configuration from iteration in string*/
     vector<int> findConfig(int iter);
 

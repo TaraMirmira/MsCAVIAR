@@ -235,8 +235,8 @@ public:
 	int end_offset = num_snps_all[0];
 	for ( int s = 0; s < num_of_studies; s++ ) {
           for(int i = start_offset; i < end_offset; i++) {
-            if((*pcausalSet)[i] == '1')
-                outputFile << (*snpNames)[0][i] << endl;
+            if((*pcausalSet)[i] == '1') {continue;}//TODO
+                //outputFile << (*snpNames)[0][i] << endl; //TODO commenting out to avoid segfault, see what to do with this
           }
 	  outputFile << "End study" << endl;
 	  start_offset = end_offset;

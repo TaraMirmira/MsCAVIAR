@@ -4,6 +4,7 @@ import numpy as np
 import sys
 
 processedfiles = sys.argv[1]
+outfile = sys.argv[2]
 
 
 f = open(processedfiles, 'r')
@@ -65,4 +66,4 @@ for i in range(num_files):
     df_all_pos[col_label][na_idxs] = -1
 
 print(df_all_pos)
-df_all_pos.to_csv("eur_afr_20_samples_snpmapinfo.txt", sep=',', header=False, index=False)
+df_all_pos.to_csv(outfile, sep=',', header=False, index=False)
