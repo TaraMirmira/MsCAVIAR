@@ -117,8 +117,8 @@ mat MPostCal::construct_diagC(vector<int> configure, int numCausal, int causal_i
       }
     }
     
-    printf("diagC again\n");
-    diagC.print(std::cout);
+    //printf("diagC again\n");
+    //diagC.print(std::cout);
     return diagC;
 }
 
@@ -385,15 +385,6 @@ vector<int> MPostCal::findConfig(int iter) {
     return config;
 }
 
-vector<int> MPostCal::findAllConfigs(vector<int> config) {
-    //TODO this is temporary, must fix
-    vector<int> all_configs;
-    for (int i = 0; i < num_of_studies; i++ ) {
-        all_configs.insert(all_configs.end(), config.begin(), config.end());
-    }
-    return all_configs;
-}
-
 double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squared) {
     double sumLikelihood = 0;
     long int total_iteration = 0 ;
@@ -581,9 +572,9 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 	  if (!checkOR(causal_bool_per_study_for_config, num_of_studies, numCausal)) {
             continue;
 	  }
-	  if (!checkAND(causal_bool_per_study_for_config, num_of_studies, numCausal)) {
-	    continue;
-	  }
+	  //if (!checkAND(causal_bool_per_study_for_config, num_of_studies, numCausal)) {
+	  //  continue;
+	  //}
 	  //printf("good to go\n");
 	  printVec(nextConfigure);
           double tmp_likelihood = 0;

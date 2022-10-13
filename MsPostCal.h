@@ -167,7 +167,6 @@ public:
     /*find configuration from iteration in string*/
     vector<int> findConfig(int iter);
 
-    vector<int> findAllConfigs(vector<int> config);
 
     /*
      greedy algorithm to find minimal set
