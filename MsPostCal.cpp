@@ -16,20 +16,39 @@
 using namespace arma;
 
 double MPostCal::log_prior(vector<int> configure, int numCausal, int causal_bool_per_study[2][3]) {
+  double sharing_param = 0.999999;
   if (num_of_studies > 2) {
     cout << "This prior does not work for more than 2 studies yet\n";
     exit(1);
   } 
   double p_of_c = 0;
+
+  /*
+  for ( int i = 0; i < numCausal; i++ ) {
+    if ( causal_bool_per_study[0][i] == causal_bool_per_study[1][i] ) {
+      if ( causal_bool_per_study[0][i] == 1 ) {
+        p_of_c += log(sharing_param);
+	printf("shared causal\n");
+      } else {
+        cout << "This case in prior should not happen\n";
+	exit(1);
+      }
+    } else {
+        p_of_c += log(1-sharing_param);
+	printf("not shared causal\n");
+    }
+  }
+  printf("partial prior is %f\n", p_of_c);
+*/
   int num_1_in_either = 0;
   for ( int i = 0; i < numCausal; i++ ) {
     if (causal_bool_per_study[0][i] == 1 or causal_bool_per_study[1][i] == 1 ) {
-      p_of_c = log(gamma);
+      p_of_c += log(gamma);
       num_1_in_either += 1;
     } 
   }
   p_of_c += ( unionSnpCount - num_1_in_either ) * log(1 - gamma);
-  //printf("prior is %f\n", p_of_c);
+  printf("prior is %f\n", p_of_c);
   //printf("num of 1 in either is %d\n", num_1_in_either);
   
   return p_of_c;
@@ -98,8 +117,8 @@ mat MPostCal::construct_diagC(vector<int> configure, int numCausal, int causal_i
       }
     }
     
-  //  printf("diagC again\n");
-    //diagC.print(std::cout);
+    printf("diagC again\n");
+    diagC.print(std::cout);
     return diagC;
 }
 
@@ -379,6 +398,7 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
     double sumLikelihood = 0;
     long int total_iteration = 0 ;
     int mycount = 0;
+    printf("num total configs = %d\n", mycount);
 
     int unionSnpCount = all_snp_pos.size();
     for(long int i = 0; i <= maxCausalSNP; i++)
@@ -393,7 +413,11 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 
     int chunksize;
     if(total_iteration < 1000){
+	    if ( total_iteration < 10 ) {
+               chunksize = total_iteration;
+	    } else {
         chunksize = total_iteration/10;
+	    }
     }
     else{
         chunksize = total_iteration/1000;
@@ -414,23 +438,23 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 
 	
 	int numCausal = std::accumulate(configure.begin(), configure.end(), 0);
-	/*if ((numCausal != 0) and (numCausal != maxCausalSNP)) {
-		printf("%d is numCausal: ", numCausal);
-		printf("%d is maxCausal: ", maxCausalSNP);
-	printf("Skipping initial configure: ");
-	printVec(configure);
-          continue;
-	}*/
+	//if ((numCausal != 0) and (numCausal != maxCausalSNP)) {
+	//	printf("%d is numCausal: ", numCausal);
+	//	printf("%d is maxCausal: ", maxCausalSNP);
+	//printf("Skipping initial configure: ");
+	//printVec(configure);
+         // continue;
+	//}
 	printf("Initial configure: ");
 	printVec(configure);
 	printf("numCausal = %d\n", numCausal);
 
         if ( numCausal == 0 ) { //if no causal, just update sum likelihood, nothing else should change
-		mycount += 1;
                 vector<int> tempConfigure(totalSnpCount, 0);
                 double tmp_likelihood = 0;
 
                 if(haslowrank==true){
+		mycount += 1;
 		  mat tmpResultMatrixNN = statMatrixtTran * statMatrix;
                   double res = tmpResultMatrixNN(0,0);
                   double matDet = 1;
@@ -557,6 +581,10 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 	  if (!checkOR(causal_bool_per_study_for_config, num_of_studies, numCausal)) {
             continue;
 	  }
+	  if (!checkAND(causal_bool_per_study_for_config, num_of_studies, numCausal)) {
+	    continue;
+	  }
+	  //printf("good to go\n");
 	  printVec(nextConfigure);
           double tmp_likelihood = 0;
           mat sigmaC = construct_diagC(nextConfigure, numCausal, causal_idx_per_study, causal_bool_per_study_for_config);
@@ -575,7 +603,7 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
          #pragma omp critical
          sumLikelihood = addlogSpace(sumLikelihood, tmp_likelihood);
  
-	 //printf("likelihood is %f\n", tmp_likelihood);
+	 printf("likelihood is %f\n", tmp_likelihood);
 
          for(int j = 0; j < totalSnpCount; j++) {
             //for(int k = 0; k < num_of_studies; k++){
@@ -602,6 +630,22 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
     return(sumLikelihood);
 }
 
+bool MPostCal::checkAND(int causal_bool_per_study_for_config[2][3], int num_of_studies, int numCausal) {
+  int sum = 0;
+  for ( int i = 0; i < numCausal; i++ ) {
+    int b = 0;
+    for ( int j = 0; j < num_of_studies; j++ ) {
+      b += causal_bool_per_study_for_config[j][i];
+    } 
+    if ( b == num_of_studies ) {
+      sum += 1;
+    }
+  }
+  if (sum == numCausal) {
+    return true;
+  }
+  return false;
+}
 
 bool MPostCal::checkOR(int causal_bool_per_study_for_config[2][3], int num_of_studies, int numCausal) {
   int sum = 0;
@@ -685,7 +729,7 @@ vector<char> MPostCal::findOptimalSetGreedy(vector<double> * stat, double sigma_
 	    double pip = exp(postValues[start_offset+index]-total_post);
 	    if (pip > 0.01) {
             printf("%d %e\n", (*rank)[start_offset+index], rho);
-            printf("Study %d, snp %d, PIP = %f\n", s, index, exp(postValues[start_offset+index]-total_post));
+            printf("Study %d, snp %d, PIP = %f\n", s, index, pip);
 	    }
         }
         index++;
