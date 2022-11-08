@@ -22,6 +22,7 @@ using namespace arma;
 
 class MCaviarModel{
 public:
+    double sharing_param;
     double rho;
     double gamma;
     int snpCount;
@@ -53,8 +54,9 @@ public:
     /*
      consrtuctor for MCaviarModel
      */
-    MCaviarModel(vector<string> ldDir, vector<string> zDir, string snpMapFile, vector<int> sample_sizes, vector<int> num_causal, string outputFileName, const int totalCausalSNP, double rho, bool histFlag, double gamma=0.01, double tau_sqr = 0.2, double sigma_g_squared = 5.2, double cutoff_threshold = 0) : totalCausalSNP(totalCausalSNP), num_of_studies(ldDir.size()) {
+    MCaviarModel(vector<string> ldDir, vector<string> zDir, string snpMapFile, vector<int> sample_sizes, vector<int> num_causal, string outputFileName, const int totalCausalSNP, double sharing_param, double rho, bool histFlag, double gamma=0.01, double tau_sqr = 0.2, double sigma_g_squared = 5.2, double cutoff_threshold = 0) : totalCausalSNP(totalCausalSNP), num_of_studies(ldDir.size()) {
         this->histFlag = histFlag;
+	this->sharing_param = sharing_param;
         this->rho = rho;
         this->gamma = gamma;
         this->ldDir = ldDir;
@@ -192,7 +194,7 @@ public:
 
                 //update S_LONG_VEC
                 mat* z_score = new mat(num_snps_all[i],1,fill::zeros);
-                for(int j = 0; j < num_snps_all[i]; j++){ //TODO i am here
+                for(int j = 0; j < num_snps_all[i]; j++){ 
                     (*z_score)(j,0) = S_LONG_VEC[sum_msubj_until_i+j]; //msubj the j does not correspond to j in this for loop, it is just an idx
                 }
 
@@ -210,7 +212,7 @@ public:
             *BIG_SIGMA = *BIG_B;
             delete(BIG_B);
         }
-        post = new MPostCal(BIG_SIGMA, &S_LONG_VEC, snpCount, totalCausalSNP, num_causal, snpNames,snp_to_idx_all, gamma, tau_sqr, sigma_g_squared, num_of_studies, sample_sizes, num_snps_all, haslowrank, idx_to_snp_map, all_snp_pos);
+        post = new MPostCal(BIG_SIGMA, &S_LONG_VEC, snpCount, totalCausalSNP, num_causal, snpNames,snp_to_idx_all, sharing_param, gamma, tau_sqr, sigma_g_squared, num_of_studies, sample_sizes, num_snps_all, haslowrank, idx_to_snp_map, all_snp_pos);
     }
 
     /*

@@ -16,30 +16,32 @@
 using namespace arma;
 
 double MPostCal::log_prior(vector<int> configure, int numCausal, int causal_bool_per_study[2][3]) {
-  double sharing_param = 0.999999;
+  //double sharing_param = 0.99;
   if (num_of_studies > 2) {
     cout << "This prior does not work for more than 2 studies yet\n";
     exit(1);
   } 
   double p_of_c = 0;
 
-  /*
-  for ( int i = 0; i < numCausal; i++ ) {
-    if ( causal_bool_per_study[0][i] == causal_bool_per_study[1][i] ) {
-      if ( causal_bool_per_study[0][i] == 1 ) {
-        p_of_c += log(sharing_param);
-	printf("shared causal\n");
+  
+  if ( sharing_param != 0 ) {
+    for ( int i = 0; i < numCausal; i++ ) {
+      if ( causal_bool_per_study[0][i] == causal_bool_per_study[1][i] ) {
+        if ( causal_bool_per_study[0][i] == 1 ) {
+          p_of_c += log(sharing_param);
+ 	  printf("shared causal\n");
+          } else {
+          cout << "This case in prior should not happen\n";
+	  exit(1);
+        }
       } else {
-        cout << "This case in prior should not happen\n";
-	exit(1);
-      }
-    } else {
         p_of_c += log(1-sharing_param);
 	printf("not shared causal\n");
+      }
     }
   }
   printf("partial prior is %f\n", p_of_c);
-*/
+
   int num_1_in_either = 0;
   for ( int i = 0; i < numCausal; i++ ) {
     if (causal_bool_per_study[0][i] == 1 or causal_bool_per_study[1][i] == 1 ) {
@@ -48,7 +50,7 @@ double MPostCal::log_prior(vector<int> configure, int numCausal, int causal_bool
     } 
   }
   p_of_c += ( unionSnpCount - num_1_in_either ) * log(1 - gamma);
-  printf("prior is %f\n", p_of_c);
+//  printf("prior is %f\n", p_of_c);
   //printf("num of 1 in either is %d\n", num_1_in_either);
   
   return p_of_c;
@@ -415,6 +417,7 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
     }
     int curr_iter = 0;
 
+
     #pragma omp parallel for schedule(static,chunksize) private(configure,num)
     for(long int i = 0; i < total_iteration; i++) {
         if(i%chunksize == 0){
@@ -436,9 +439,9 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 	//printVec(configure);
          // continue;
 	//}
-	printf("Initial configure: ");
-	printVec(configure);
-	printf("numCausal = %d\n", numCausal);
+	//*printf("Initial configure: ");
+	//*printVec(configure);
+	//*printf("numCausal = %d\n", numCausal);
 
         if ( numCausal == 0 ) { //if no causal, just update sum likelihood, nothing else should change
                 vector<int> tempConfigure(totalSnpCount, 0);
@@ -535,7 +538,7 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 	    }
 	}	
 	total_num_additional_configs = (int)(pow(2, total_num_additional_configs) - 1);
-	printf("num additional = %d\n", total_num_additional_configs);
+//	printf("num additional = %d\n", total_num_additional_configs);
 
 
 	for ( int i = 0; i < total_num_additional_configs; i++ ) {
@@ -561,6 +564,7 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 	      }
 	    }
 	  }
+	  
 	  /*
 	printf("causal bool per study for config\n");
         for ( int ii = 0; ii < 2; ii++ ) {
@@ -572,11 +576,10 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 	  if (!checkOR(causal_bool_per_study_for_config, num_of_studies, numCausal)) {
             continue;
 	  }
-	  //if (!checkAND(causal_bool_per_study_for_config, num_of_studies, numCausal)) {
-	  //  continue;
-	  //}
-	  //printf("good to go\n");
-	  printVec(nextConfigure);
+	  if (!checkAND(causal_bool_per_study_for_config, num_of_studies, numCausal)) {
+	    continue;
+	  }
+	  //printVec(nextConfigure);
           double tmp_likelihood = 0;
           mat sigmaC = construct_diagC(nextConfigure, numCausal, causal_idx_per_study, causal_bool_per_study_for_config);
           //printf("sigma C\n");
@@ -594,12 +597,30 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
          #pragma omp critical
          sumLikelihood = addlogSpace(sumLikelihood, tmp_likelihood);
  
-	 printf("likelihood is %f\n", tmp_likelihood);
+	 //printf("likelihood is %f\n", tmp_likelihood);
 
-         for(int j = 0; j < totalSnpCount; j++) {
+         for ( int w = 0; w < num_of_studies; w++ ) {
+	   bool allZero = true;
+           for ( int v = 0; v < numCausal; v++ ) {
+             if (causal_bool_per_study_for_config[w][v] == 1) {
+	       allZero = false;
+	       break;
+	     }
+	   }
+	   if ( allZero ) {
+		   //printf("no causal in study %d\n", w);
+             noCausal[w] = addlogSpace(noCausal[w], tmp_likelihood);
+	   }
+	 }
+
+         for(int f = 0; f < totalSnpCount; f++) {
             //for(int k = 0; k < num_of_studies; k++){
                 #pragma omp critical
-                postValues[j] = addlogSpace(postValues[j], tmp_likelihood * nextConfigure[j]);
+                postValues[f] = addlogSpace(postValues[f], tmp_likelihood * nextConfigure[f]);
+		if ( nextConfigure[f] == 1 ) {
+                  //printf("updating index %d\n", f);
+		  //printf("added in log space %f\n", tmp_likelihood);
+		}
                 //}
          }        
        }
@@ -617,6 +638,8 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
     for(int i = 0; i <= maxCausalSNP; i++) //TODO what is this for, do I need to change it
         histValues[i] = exp(histValues[i]-sumLikelihood);
     printf("num total configs = %d\n", mycount);
+
+
     
     return(sumLikelihood);
 }
@@ -663,12 +686,19 @@ vector<char> MPostCal::findOptimalSetGreedy(vector<double> * stat, double sigma_
     totalLikeLihoodLOG = computeTotalLikelihood(stat, sigma_g_squared);
 
     export2File(outputFileName+"_log.txt", exp(totalLikeLihoodLOG)); //Output the total likelihood to the log File
-    for(int i = 0; i < totalSnpCount; i++)
+    for(int i = 0; i < totalSnpCount; i++) {
         total_post = addlogSpace(total_post, postValues[i]);
+    }
     printf("\nTotal Likelihood = %e SNP=%d \n", total_post, totalSnpCount);
 
+
+    for ( int i = 0; i < num_of_studies; i++ ) {
+      printf("no causal just value %f\n", noCausal[i]);
+      printf("Prob of no causal for study %d is %f\n", i, exp(noCausal[i]-total_post));
+    }
+
     for ( int i = 0; i < totalSnpCount; i++ ) {
-      printf("post value for pos %d is %f\n", i, exp(postValues[i]-total_post));
+      printf("post value for index %d = %f\n", i, exp(postValues[i] - total_post));
     }
 
     std::vector<data> items;

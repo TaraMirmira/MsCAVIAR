@@ -68,6 +68,7 @@ vector<int> read_sigma(string sample_size) {
 int main( int argc, char *argv[]  ){
     int totalCausalSNP = 3;
     double gamma = 0.01;
+    double sharing_param = 0.75;
     double rho = 0.95;
     bool histFlag = false;
     int oc = 0;
@@ -82,7 +83,7 @@ int main( int argc, char *argv[]  ){
     string sample_s = "";
     string num_causal_s = "";
 
-    while ((oc = getopt(argc, argv, "vhl:o:z:m:r:c:k:g:f:t:s:n:a:")) != -1) {
+    while ((oc = getopt(argc, argv, "vhl:o:z:m:p:r:c:k:g:f:t:s:n:a:")) != -1) {
         switch (oc) {
             case 'v':
                 cout << "Version 0.1\n" << endl;
@@ -93,6 +94,7 @@ int main( int argc, char *argv[]  ){
                 cout << "-l LDFile, --ld_file=LDFILE    REQUIRED: the ld input file that contains paths to ld files" << endl;
                 cout << "-z ZFile, --z_file=ZFILE   REQUIRED: the z-score and rsID file that contains paths to z files" << endl;
 		cout << "-m snpMapFile --m=SNPMAPFILE REQUIRED: maps indexes to SNPs in each study" <<endl;
+		cout << "-p sharing param" <<endl;
                 cout << "-r RHO, --rho-prob=RHO     set $rho$ probability (default 0.95)" << endl;
                 cout << "-g GAMMA, --gamma      set $gamma$ the prior of a SNP being causal (default 0.01)" << endl;
                 cout << "-c causal          set the maximum number of causal SNPs (default 3)" << endl;
@@ -120,6 +122,9 @@ int main( int argc, char *argv[]  ){
                 sample_s = string(optarg);
                 break;
             // optional arguments: parameters for fine mapping
+	    case 'p':
+		sharing_param = atof(optarg);
+		break;
             case 'r':
                 rho = atof(optarg);
                 break;
@@ -175,7 +180,7 @@ int main( int argc, char *argv[]  ){
         exit(1);
     }
 
-    MCaviarModel Mcaviar(ldDir, zDir, snpMapFile, sample_sizes, num_causal, outputFileName, finalTotalCausalSNP, rho, histFlag, gamma, tau_sqr, sigma_g_squared, cutoff_threshold);
+    MCaviarModel Mcaviar(ldDir, zDir, snpMapFile, sample_sizes, num_causal, outputFileName, finalTotalCausalSNP, sharing_param, rho, histFlag, gamma, tau_sqr, sigma_g_squared, cutoff_threshold);
     Mcaviar.run();
     Mcaviar.finishUp();
     return 0;
