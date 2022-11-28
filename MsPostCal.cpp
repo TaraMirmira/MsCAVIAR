@@ -16,7 +16,6 @@
 using namespace arma;
 
 double MPostCal::log_prior(vector<int> configure, int numCausal, int causal_bool_per_study[2][3]) {
-  //double sharing_param = 0.99;
   if (num_of_studies > 2) {
     cout << "This prior does not work for more than 2 studies yet\n";
     exit(1);
@@ -29,18 +28,18 @@ double MPostCal::log_prior(vector<int> configure, int numCausal, int causal_bool
       if ( causal_bool_per_study[0][i] == causal_bool_per_study[1][i] ) {
         if ( causal_bool_per_study[0][i] == 1 ) {
           p_of_c += log(sharing_param);
- 	  printf("shared causal\n");
+ 	  //printf("shared causal\n");
           } else {
           cout << "This case in prior should not happen\n";
 	  exit(1);
         }
       } else {
         p_of_c += log(1-sharing_param);
-	printf("not shared causal\n");
+	//printf("not shared causal\n");
       }
     }
   }
-  printf("partial prior is %f\n", p_of_c);
+  //printf("partial prior is %f\n", p_of_c);
 
   int num_1_in_either = 0;
   for ( int i = 0; i < numCausal; i++ ) {
@@ -429,13 +428,12 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
         }
 
 
-
-	
 	int numCausal = std::accumulate(configure.begin(), configure.end(), 0);
 	//if ((numCausal != 0) and (numCausal != maxCausalSNP)) {
 	//	printf("%d is numCausal: ", numCausal);
 	//	printf("%d is maxCausal: ", maxCausalSNP);
 	//printf("Skipping initial configure: ");
+	//printf("next configure to expand\n");
 	//printVec(configure);
          // continue;
 	//}
@@ -483,6 +481,7 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 	//printf("\n");
         
 	
+	//printf("total snp count is: %d\n", totalSnpCount);
         vector<int> startConfigure(totalSnpCount, 0);
 
 
@@ -576,9 +575,10 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 	  if (!checkOR(causal_bool_per_study_for_config, num_of_studies, numCausal)) {
             continue;
 	  }
-	  if (!checkAND(causal_bool_per_study_for_config, num_of_studies, numCausal)) {
-	    continue;
-	  }
+	  //if (!checkAND(causal_bool_per_study_for_config, num_of_studies, numCausal)) {
+	  //  continue;
+	  //}
+	  //printf("next config to eval\n");
 	  //printVec(nextConfigure);
           double tmp_likelihood = 0;
           mat sigmaC = construct_diagC(nextConfigure, numCausal, causal_idx_per_study, causal_bool_per_study_for_config);
@@ -635,12 +635,12 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 
     //cout << "\ncomputing likelihood of all configurations took  " << (float)(clock()-start)/CLOCKS_PER_SEC << "seconds.\n";
 
-    for(int i = 0; i <= maxCausalSNP; i++) //TODO what is this for, do I need to change it
+    for(int i = 0; i <= maxCausalSNP; i++) { //TODO what is this for, do I need to change it
         histValues[i] = exp(histValues[i]-sumLikelihood);
+    }
     printf("num total configs = %d\n", mycount);
 
 
-    
     return(sumLikelihood);
 }
 
@@ -698,7 +698,11 @@ vector<char> MPostCal::findOptimalSetGreedy(vector<double> * stat, double sigma_
     }
 
     for ( int i = 0; i < totalSnpCount; i++ ) {
-      printf("post value for index %d = %f\n", i, exp(postValues[i] - total_post));
+      double pip = exp(postValues[i] - total_post);
+      if ( pip > 0.05 ) {
+        causalSet[i] = '1';
+      }
+      printf("post value for index %d = %f\n", i, pip);
     }
 
     std::vector<data> items;
@@ -746,11 +750,10 @@ vector<char> MPostCal::findOptimalSetGreedy(vector<double> * stat, double sigma_
       while(rho < inputRho){
         rho += exp(postValues[(*rank)[start_offset+index]]-total_post);
         if(exp(postValues[(*rank)[start_offset+index]]-total_post) > threshold){
-            causalSet[(*rank)[start_offset+index]] = '1';
+            //causalSet[(*rank)[start_offset+index]] = '1';
 	    double pip = exp(postValues[start_offset+index]-total_post);
 	    if (pip > 0.01) {
-            printf("%d %e\n", (*rank)[start_offset+index], rho);
-            printf("Study %d, snp %d, PIP = %f\n", s, index, pip);
+            printf("%d %f\n", start_offset+index, pip);
 	    }
         }
         index++;

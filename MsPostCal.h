@@ -195,21 +195,33 @@ public:
      */
     void printPost2File(string fileName) {
         double total_post = 0;
-        ofstream outfile(fileName.c_str(), ios::out );
-        for(int i = 0; i < snpCount; i++)
+        for(int i = 0; i < totalSnpCount; i++) {
             total_post = addlogSpace(total_post, postValues[i]);
-        
+	}
+
+        int start_offset = 0;
+	int end_offset = num_snps_all[0];
+	for ( int s = 0; s < num_of_studies; s++ ) {
+          ofstream outputFile;
+          string outFileNameSet = string(fileName)+"_study"+std::to_string(s)+"_post.txt";
+          outputFile.open(outFileNameSet.c_str());
+          outputFile << "SNP_ID\tProb_in_pCausalSet" << endl;
+          int j = 0;
+          for(int i = start_offset; i < end_offset; i++) {
+            outputFile << (*SNP_NAME)[s][j] << "\t" << exp(postValues[i]-total_post)  << endl; 
+	    j += 1;
+          }
+	  start_offset = end_offset;
+	  end_offset += num_snps_all[s];
+	  outputFile.close();
+	}
+
         /* old post file output
         outfile << "SNP_ID\tProb_in_pCausalSet\tCausal_Post._Prob." << endl;
         for(int i = 0; i < snpCount; i++) {
             outfile << (*SNP_NAME)[0][i] << "\t" << exp(postValues[i]-total_post) << "\t" << exp(postValues[i]-totalLikeLihoodLOG) << endl;
         }
         */
-
-        outfile << "SNP_ID\tProb_in_pCausalSet" << endl;
-        for(int i = 0; i < snpCount; i++) {
-            outfile << (*SNP_NAME)[0][i] << "\t" << exp(postValues[i]-total_post) << endl;
-        }
     }
 
 };

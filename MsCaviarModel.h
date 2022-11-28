@@ -90,6 +90,7 @@ public:
 
             int numSnps = sqrt(temp_LD->size());
 	    num_snps_all.push_back(numSnps);
+	    printf("pushing back num snps %d for study %d\n", i, numSnps);
             mat temp_sig;
             temp_sig = mat(numSnps, numSnps);
             for (int i = 0; i < numSnps; i++){
@@ -112,6 +113,11 @@ public:
 
             delete temp_LD;
         }
+	printf("len of snpnames is %ld\n", snpNames->size());
+	for ( int i = 0; i < 2; i++ ) {
+          printf("len of snpnames vector %d is %ld\n", i, (*snpNames)[i].size());
+	}
+
 
 //        num_of_studies(snpNames->size());
 
@@ -230,21 +236,24 @@ public:
      @return no return
      */
     void finishUp() {
-        ofstream outputFile;
-        string outFileNameSet = string(outputFileName)+"_set.txt";
-        outputFile.open(outFileNameSet.c_str());
 	int start_offset = 0;
 	int end_offset = num_snps_all[0];
 	for ( int s = 0; s < num_of_studies; s++ ) {
+          ofstream outputFile;
+          string outFileNameSet = string(outputFileName)+"_study"+std::to_string(s)+"_set.txt";
+          outputFile.open(outFileNameSet.c_str());
+          int j = 0;
           for(int i = start_offset; i < end_offset; i++) {
-            if((*pcausalSet)[i] == '1') {continue;}//TODO
-                //outputFile << (*snpNames)[0][i] << endl; //TODO commenting out to avoid segfault, see what to do with this
+            if((*pcausalSet)[i] == '1') {
+                outputFile << (*snpNames)[s][j] << endl; //TODO commenting out to avoid segfault, see what to do with this
+	    }
+	    j += 1;
           }
-	  outputFile << "End study" << endl;
 	  start_offset = end_offset;
 	  end_offset += num_snps_all[s];
+	  outputFile.close();
 	}
-        post->printPost2File(string(outputFileName)+"_post.txt");
+        post->printPost2File(string(outputFileName));
 	/* commenting out for now
         //outputs the histogram data to file
         if(histFlag)
