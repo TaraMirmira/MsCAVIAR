@@ -212,7 +212,9 @@ public:
 	    j += 1;
           }
 	  start_offset = end_offset;
-	  end_offset += num_snps_all[s];
+	  if ( s!= num_of_studies - 1 ) {
+	    end_offset += num_snps_all[s+1];
+	  }
 	  outputFile.close();
 	}
 

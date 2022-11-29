@@ -236,6 +236,8 @@ public:
      @return no return
      */
     void finishUp() {
+	//printf("causal set:\n");
+	//printCharVec(*pcausalSet);
 	int start_offset = 0;
 	int end_offset = num_snps_all[0];
 	for ( int s = 0; s < num_of_studies; s++ ) {
@@ -245,12 +247,14 @@ public:
           int j = 0;
           for(int i = start_offset; i < end_offset; i++) {
             if((*pcausalSet)[i] == '1') {
-                outputFile << (*snpNames)[s][j] << endl; //TODO commenting out to avoid segfault, see what to do with this
+                outputFile << (*snpNames)[s][j] << endl;
 	    }
 	    j += 1;
           }
 	  start_offset = end_offset;
-	  end_offset += num_snps_all[s];
+	  if ( s != num_of_studies-1 ) {
+	    end_offset += num_snps_all[s+1];
+	  }
 	  outputFile.close();
 	}
         post->printPost2File(string(outputFileName));

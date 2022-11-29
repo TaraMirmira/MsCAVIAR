@@ -43,6 +43,12 @@ void printVec(vector<int> v) {
    }
    printf("\n");
 }
+void printCharVec(vector<char> v) {
+   for ( int i = 0; i < v.size(); i++ ) {
+     printf("%c", v[i]);
+   }
+   printf("\n");
+}
 
 
 

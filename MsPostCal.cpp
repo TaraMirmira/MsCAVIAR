@@ -704,6 +704,8 @@ vector<char> MPostCal::findOptimalSetGreedy(vector<double> * stat, double sigma_
       }
       printf("post value for index %d = %f\n", i, pip);
     }
+    //printf("causal set:\n");
+    //printCharVec(causalSet);
 
     std::vector<data> items;
     std::set<int>::iterator it;
