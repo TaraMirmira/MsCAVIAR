@@ -90,6 +90,10 @@ public:
 
             int numSnps = sqrt(temp_LD->size());
 	    num_snps_all.push_back(numSnps);
+	    if (numSnps != temp_names.size()) {
+              printf("ERROR: LD matrix is size %d x %d but zscores has %lu snps\n. Check LD file for nans.\n", numSnps, numSnps, temp_names.size());
+	      exit(1);
+	    }
 	    printf("pushing back num snps %d for study %d\n", i, numSnps);
             mat temp_sig;
             temp_sig = mat(numSnps, numSnps);
