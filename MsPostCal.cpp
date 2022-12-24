@@ -462,7 +462,10 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
                   double matDet = sigmaDet;
                   double ll = (-res/2-sqrt(abs(matDet)));
                   tmp_likelihood = ll + unionSnpCount * log(1-gamma);
-                 }
+                }  
+		for ( int ss = 0; ss < num_of_studies; ss++ ) {
+                  noCausal[ss] = addlogSpace(noCausal[ss], tmp_likelihood);
+		}
 
                 #pragma omp critical
                 sumLikelihood = addlogSpace(sumLikelihood, tmp_likelihood);

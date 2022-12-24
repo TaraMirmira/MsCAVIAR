@@ -191,7 +191,7 @@ public:
     }
 
     /*
-     print to the .post file
+     print to the .post file as well as no causal
      */
     void printPost2File(string fileName) {
         double total_post = 0;
@@ -217,6 +217,13 @@ public:
 	  }
 	  outputFile.close();
 	}
+	ofstream outputFile;
+	string outFileNameSet = string(fileName)+"_nocausal.txt";
+        outputFile.open(outFileNameSet.c_str());
+        for ( int s = 0; s < num_of_studies; s++ ) {
+          outputFile << exp(noCausal[s]-total_post) << endl;
+        }
+        outputFile.close();
 
         /* old post file output
         outfile << "SNP_ID\tProb_in_pCausalSet\tCausal_Post._Prob." << endl;
