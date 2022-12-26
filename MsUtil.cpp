@@ -85,9 +85,9 @@ void importSnpMap(string snpMapFile, int numCols, vector<string> * firstCol, vec
 	for ( int i = 0; i < numCols; i++ ) {
             getline(s, word, ',');
 	    if ( i == 0 ) {
-                firstCol->push_back(word);
+                firstCol->push_back(word); //rsid
 	    } else {
-                (*remainingCols)[i-1].push_back(stoi(word));
+                (*remainingCols)[i-1].push_back(stoi(word)); //idx in study
 	    }
 	}
     }  

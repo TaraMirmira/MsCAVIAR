@@ -25,6 +25,7 @@ private:
     int totalSnpCount;
     double * postValues;    //the posterior value for each SNP being causal
     double * noCausal;
+    double * sharedPips;
     double * histValues;    //the probability of the number of causal SNPs, we make the histogram of the causal SNPs
     int snpCount;        //total number of variants (SNP) in a locus
     const int maxCausalSNP;    //maximum number of causal variants to consider in a locus
@@ -97,6 +98,10 @@ public:
 	this-> idx_to_snp_map = idx_to_snp_map;
 	this-> all_snp_pos = all_snp_pos;
 	this-> unionSnpCount = all_snp_pos.size();
+	this-> sharedPips = new double [unionSnpCount];
+	for ( int i = 0; i < unionSnpCount; i++ ) {
+          this->sharedPips[i] = 0;
+	}
 
         // statMatrix is the z-score matrix of mn*1, m = number of snps, n = num of studies
         statMatrix = mat (totalSnpCount, 1);
@@ -127,6 +132,7 @@ public:
         delete [] histValues;
         delete [] postValues;
 	delete [] noCausal;
+	delete [] sharedPips;
     }
 
     /*
@@ -199,6 +205,7 @@ public:
             total_post = addlogSpace(total_post, postValues[i]);
 	}
 
+
         int start_offset = 0;
 	int end_offset = num_snps_all[0];
 	for ( int s = 0; s < num_of_studies; s++ ) {
@@ -224,6 +231,14 @@ public:
           outputFile << exp(noCausal[s]-total_post) << endl;
         }
         outputFile.close();
+
+	string outFileNameShared = string(fileName)+"_shared_pips.txt";
+	outputFile.open(outFileNameShared.c_str());
+	outputFile << "POS\tshared_pip" << endl;
+	for ( int i = 0; i < unionSnpCount; i++ ) {
+          outputFile << all_snp_pos[i] << "\t" << exp(sharedPips[i]-total_post) << endl;
+	}
+	outputFile.close();
 
         /* old post file output
         outfile << "SNP_ID\tProb_in_pCausalSet\tCausal_Post._Prob." << endl;

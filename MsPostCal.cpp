@@ -616,6 +616,19 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 	   }
 	 }
 
+
+	 for ( int g = 0; g < numCausal; g++ ) {
+           bool sharedCausal = true;
+	   for ( int h = 0; h < num_of_studies; h++ ) {
+             if ( causal_bool_per_study_for_config[h][g] == 0 ) {
+               sharedCausal = false;
+	     }
+	   }
+	   if ( sharedCausal ) {
+             sharedPips[causal_locs[g]] =  addlogSpace(sharedPips[causal_locs[g]], tmp_likelihood);
+	   }
+	 }
+
          for(int f = 0; f < totalSnpCount; f++) {
             //for(int k = 0; k < num_of_studies; k++){
                 #pragma omp critical
@@ -719,14 +732,17 @@ vector<char> MPostCal::findOptimalSetGreedy(vector<double> * stat, double sigma_
     }
     printf("\n");
     int start_offset = 0;
-    int end_offset = num_snps_all[0];
+    int end_offset = 0;
     for ( int s = 0; s < num_of_studies; s++ ) {
+      end_offset += num_snps_all[s]; //update end offset, needs to happen here, not where start offset is updated
+      printf("start offset = %d\n", start_offset);
+      printf("end offset = %d\n", end_offset);
       std::sort(items.begin()+start_offset, items.begin()+end_offset, by_number());
+      printf("sort complete %d\n", s);
       for(int i = 0; i < num_snps_all[s]; i++) {
         (*rank)[start_offset+i] = items[i].index1;
       } 
       start_offset = end_offset; //update start offset
-      end_offset += num_snps_all[s]; //update end offset
     }
 
     /* replaced by above for loop
@@ -748,8 +764,9 @@ vector<char> MPostCal::findOptimalSetGreedy(vector<double> * stat, double sigma_
     
     //reset offsets 
     start_offset = 0;
-    end_offset = num_snps_all[0];
+    end_offset = 0;
     for ( int s = 0; s < num_of_studies; s++ ) {
+      end_offset += num_snps_all[s];
       double rho = double(0);
       int index = 0;
       while(rho < inputRho){
@@ -769,7 +786,6 @@ vector<char> MPostCal::findOptimalSetGreedy(vector<double> * stat, double sigma_
 	}
       }
       start_offset = end_offset;
-      end_offset += num_snps_all[s];
     }
 
     /*
