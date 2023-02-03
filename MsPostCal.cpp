@@ -437,9 +437,9 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 	//printVec(configure);
          // continue;
 	//}
-	//*printf("Initial configure: ");
-	//*printVec(configure);
-	//*printf("numCausal = %d\n", numCausal);
+	//printf("Initial configure: ");
+	//printVec(configure);
+	//printf("numCausal = %d\n", numCausal);
 
         if ( numCausal == 0 ) { //if no causal, just update sum likelihood, nothing else should change
                 vector<int> tempConfigure(totalSnpCount, 0);
@@ -590,7 +590,7 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 
           if ( haslowrank == true ) {
              mycount += 1;
-             tmp_likelihood = lowrank_likelihood(nextConfigure, stat, sigma_g_squared, sigmaC) + log_prior(nextConfigure, numCausal, causal_bool_per_study_for_config); //TODO prior
+             tmp_likelihood = lowrank_likelihood(nextConfigure, stat, sigma_g_squared, sigmaC) + log_prior(nextConfigure, numCausal, causal_bool_per_study_for_config); 
              }
           else {
              mycount += 1;
@@ -599,8 +599,10 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
         
          #pragma omp critical
          sumLikelihood = addlogSpace(sumLikelihood, tmp_likelihood);
+	 //printf("sumLikelihood is %f\n", sumLikelihood);
  
 	 //printf("likelihood is %f\n", tmp_likelihood);
+	 //printf("exp likelihood is %f\n", exp(tmp_likelihood));
 
          for ( int w = 0; w < num_of_studies; w++ ) {
 	   bool allZero = true;
@@ -625,7 +627,9 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 	     }
 	   }
 	   if ( sharedCausal ) {
+             //printf("shared causal\n");
              sharedPips[causal_locs[g]] =  addlogSpace(sharedPips[causal_locs[g]], tmp_likelihood);
+	     //printf("shared pip = %f", sharedPips[causal_locs[g]]);
 	   }
 	 }
 
@@ -633,10 +637,11 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
             //for(int k = 0; k < num_of_studies; k++){
                 #pragma omp critical
                 postValues[f] = addlogSpace(postValues[f], tmp_likelihood * nextConfigure[f]);
-		if ( nextConfigure[f] == 1 ) {
+		//if ( nextConfigure[f] == 1 ) {
                   //printf("updating index %d\n", f);
 		  //printf("added in log space %f\n", tmp_likelihood);
-		}
+		  //printf("post value for %d is %f\n", f, postValues[f]);
+		//}
                 //}
          }        
        }
@@ -706,6 +711,7 @@ vector<char> MPostCal::findOptimalSetGreedy(vector<double> * stat, double sigma_
         total_post = addlogSpace(total_post, postValues[i]);
     }
     printf("\nTotal Likelihood = %e SNP=%d \n", total_post, totalSnpCount);
+    total_post = totalLikeLihoodLOG;
 
 
     for ( int i = 0; i < num_of_studies; i++ ) {
@@ -780,9 +786,8 @@ vector<char> MPostCal::findOptimalSetGreedy(vector<double> * stat, double sigma_
         }
         index++;
 	if (index >= num_snps_all[s]) {
-	  cout << "Should this happen? Think it is ok for now\n";
 	  //exit(1);
-	  break;
+	  break; //credible set no longer makes sense
 	}
       }
       start_offset = end_offset;

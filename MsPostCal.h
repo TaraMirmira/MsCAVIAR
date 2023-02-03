@@ -204,6 +204,7 @@ public:
         for(int i = 0; i < totalSnpCount; i++) {
             total_post = addlogSpace(total_post, postValues[i]);
 	}
+	total_post = totalLikeLihoodLOG;
 
 
         int start_offset = 0;
@@ -234,9 +235,13 @@ public:
 
 	string outFileNameShared = string(fileName)+"_shared_pips.txt";
 	outputFile.open(outFileNameShared.c_str());
-	outputFile << "POS\tshared_pip" << endl;
+	outputFile << "SNP_ID\tshared_pip" << endl;
 	for ( int i = 0; i < unionSnpCount; i++ ) {
+          if (sharedPips[i] == 0) {
+            outputFile << all_snp_pos[i] << "\t" << 0 << endl;
+	  } else {
           outputFile << all_snp_pos[i] << "\t" << exp(sharedPips[i]-total_post) << endl;
+	  }
 	}
 	outputFile.close();
 
