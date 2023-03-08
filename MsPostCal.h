@@ -181,6 +181,7 @@ public:
     /*find configuration from iteration in string*/
     vector<int> findConfig(int iter);
 
+    vector<int> constructConfig(vector<int> input_causal_locs);
 
     /*
      greedy algorithm to find minimal set

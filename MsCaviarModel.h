@@ -37,6 +37,7 @@ public:
     vector<string> ldDir;
     vector<string> zDir;
     string snpMapFile;
+    string configsFile;
     vector<int> sample_sizes;
     vector<int> num_causal; //number of causal snps in each study
     vector<int> num_snps_all; //number of snps in each study
@@ -54,7 +55,7 @@ public:
     /*
      consrtuctor for MCaviarModel
      */
-    MCaviarModel(vector<string> ldDir, vector<string> zDir, string snpMapFile, vector<int> sample_sizes, vector<int> num_causal, string outputFileName, const int totalCausalSNP, double sharing_param, double rho, bool histFlag, double gamma=0.01, double tau_sqr = 0.2, double sigma_g_squared = 5.2, double cutoff_threshold = 0) : totalCausalSNP(totalCausalSNP), num_of_studies(ldDir.size()) {
+    MCaviarModel(vector<string> ldDir, vector<string> zDir, string snpMapFile, string configsFile, vector<int> sample_sizes, vector<int> num_causal, string outputFileName, const int totalCausalSNP, double sharing_param, double rho, bool histFlag, double gamma=0.01, double tau_sqr = 0.2, double sigma_g_squared = 5.2, double cutoff_threshold = 0) : totalCausalSNP(totalCausalSNP), num_of_studies(ldDir.size()) {
         this->histFlag = histFlag;
 	this->sharing_param = sharing_param;
         this->rho = rho;
@@ -62,6 +63,7 @@ public:
         this->ldDir = ldDir;
         this->zDir  = zDir;
 	this->snpMapFile = snpMapFile;
+	this->configsFile = configsFile;
         this->outputFileName = outputFileName;
 //        this->totalCausalSNP = totalCausalSNP;
         this->tau_sqr = tau_sqr;

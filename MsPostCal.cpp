@@ -55,6 +55,7 @@ double MPostCal::log_prior(vector<int> configure, int numCausal, int causal_bool
   return p_of_c;
 }
 
+
 // calibrate for sample size imbalance
 mat MPostCal::construct_diagC(vector<int> configure, int numCausal, int causal_idx_per_study[2][3], int causal_bool_per_study[2][3]) {
 	/*printf("causal bool per study\n");
@@ -304,6 +305,7 @@ double MPostCal::lowrank_likelihood(vector<int> configure, vector<double> * stat
     return tmpFinalRes;
 }
 
+
 int MPostCal::nextBinary(vector<int>& data, int size) {
     int i = 0;
     int total_one = 0;
@@ -384,6 +386,283 @@ vector<int> MPostCal::findConfig(int iter) {
     }
    // printf("num causal in this config is %d\n", temp);
     return config;
+}
+
+vector<int> MPostCal::constructConfig(vector<int> input_causal_locs) {
+   vector<int> config(totalSnpCount, 0);
+   for ( int i = 0; i < input_causal_locs.size(); i++ ) {
+      if ( input_causal_locs[i] >= 0 ) {
+         config[input_causal_locs[i]] = 1;
+      }
+   }
+   return config;
+}
+
+
+double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double sigma_g_squared, int total_iteration, char* all_configs_file) {
+    double sumLikelihood = 0;
+    long int total_iteration = 0 ;
+    int mycount = 0;
+    printf("num total configs = %d\n", mycount);
+
+    int unionSnpCount = all_snp_pos.size();
+    cout << "Max Causal = " << maxCausalSNP << endl;
+    cout << "Union Snp Count = " << unionSnpCount << endl;
+
+    //clock_t start = clock();
+    vector<int> configure;
+    int num;
+
+    int chunksize;
+    if(total_iteration < 1000){
+	    if ( total_iteration < 10 ) {
+               chunksize = total_iteration;
+	    } else {
+        chunksize = total_iteration/10;
+	    }
+    }
+    else{
+        chunksize = total_iteration/1000;
+    }
+    int curr_iter = 0;
+
+
+    #pragma omp parallel for schedule(static,chunksize) private(configure,num)
+    for(long int i = 0; i < total_iteration; i++) {
+	vector<int> causal_locs_input = ; //TODO
+        //TODO read config into configure
+
+	int numCausal = 0;
+	for ( int i = 0; i < causal_locs_input.size(); i++ ) {
+          numCausal += 1;
+	}
+
+        if ( numCausal == 0 ) { //if no causal, just update sum likelihood, nothing else should change
+                vector<int> tempConfigure(totalSnpCount, 0);
+                double tmp_likelihood = 0;
+
+                if(haslowrank==true){
+		mycount += 1;
+		  mat tmpResultMatrixNN = statMatrixtTran * statMatrix;
+                  double res = tmpResultMatrixNN(0,0);
+                  double matDet = 1;
+                  double lrl = (-res/2-sqrt(abs(matDet))); //lrl = low rank likelihood
+                  tmp_likelihood = lrl + unionSnpCount * log(1-gamma);
+                }
+                else{
+		  mycount += 1;
+		  mat tmpResultMatrixNM = statMatrixtTran * invSigmaMatrix;
+                  mat tmpResultMatrixNN = tmpResultMatrixNM * statMatrix;
+
+                  double res = tmpResultMatrixNN(0,0);
+                  double matDet = sigmaDet;
+                  double ll = (-res/2-sqrt(abs(matDet)));
+                  tmp_likelihood = ll + unionSnpCount * log(1-gamma);
+                }  
+		for ( int ss = 0; ss < num_of_studies; ss++ ) {
+                  noCausal[ss] = addlogSpace(noCausal[ss], tmp_likelihood);
+		}
+
+                #pragma omp critical
+                sumLikelihood = addlogSpace(sumLikelihood, tmp_likelihood);
+		continue;
+	}
+
+
+	//TODO
+	//need a max_causal_per_study
+	//already have num_snps_per_study in num_snps_all
+
+	vector<int> causal_locs;
+	//printf("causal locs are: ");
+	for ( int i = 0; i < unionSnpCount; i++ ) {
+            if ( configure[i] == 1 ) {
+	        causal_locs.push_back(i);
+		//printf("%d ", i);
+	    }    
+	}
+	//printf("\n");
+        
+	
+	//printf("total snp count is: %d\n", totalSnpCount);
+        vector<int> startConfigure(totalSnpCount, 0);
+
+
+	int causal_idx_per_study[2][3]; //2 = num of studies, 3 = max causal TODO this is hardcoded for now
+	int causal_bool_per_study[2][3]; 
+	for ( int i = 0; i < 2; i ++ ) {
+          for ( int j = 0; j < 3; j++ ) {
+            causal_idx_per_study[i][j] = 0; //zero out
+	    causal_bool_per_study[i][j] = 0; //zero out
+	  }
+	}
+	for ( int i = 0; i < num_of_studies; i++ ) {
+            for ( int j = 0; j < numCausal; j++ ) {
+		int loc_in_studyi = idx_to_snp_map[i][causal_locs[j]];
+		//printf("loc in study %d is %d\n", i, loc_in_studyi);
+		int studyi_offset = std::accumulate(num_snps_all.begin(), num_snps_all.begin()+i, 0);
+                if (loc_in_studyi >= 0) { //means it exists in study i
+		    causal_idx_per_study[i][j] = loc_in_studyi;
+		    causal_bool_per_study[i][j] = 1;
+		    startConfigure[studyi_offset + loc_in_studyi] = 1;
+		} else {
+                    causal_idx_per_study[i][j] = -1;
+		    causal_bool_per_study[i][j] = 0;
+		}
+	    }	    
+	}
+       /* 
+	printf("causal index per study\n");
+        for ( int i = 0; i < 2; i++ ) {
+        for ( int j = 0; j < 3; j++ ) {
+		printf("%d ", causal_idx_per_study[i][j]);
+	}
+	printf("\n");
+	}
+	printf("causal bool per study\n");
+        for ( int i = 0; i < 2; i++ ) {
+        for ( int j = 0; j < 3; j++ ) {
+		printf("%d ", causal_bool_per_study[i][j]);
+	}
+	printf("\n");
+	}*/
+
+	int total_num_additional_configs = 0;
+        int num_additional_configs[3]; //TODO hardcoded for now as max size of 3 because max causal is 3
+	for ( int i = 0; i < 3; i++ ) {
+          num_additional_configs[i] = 0; //zero out
+	}
+        for ( int i = 0; i < numCausal; i++ ) {
+	    for ( int j = 0; j < num_of_studies; j++ ) {
+                if ( causal_bool_per_study[j][i] == 1 ) {
+                    total_num_additional_configs += 1;
+		}
+	    }
+	}	
+	total_num_additional_configs = (int)(pow(2, total_num_additional_configs) - 1);
+//	printf("num additional = %d\n", total_num_additional_configs);
+
+
+	for ( int i = 0; i < total_num_additional_configs; i++ ) {
+	  int causal_bool_per_study_for_config[2][3];
+	  int bmask = i+1;
+	  for ( int x = 0; x < 2; x++ ) {
+	    for ( int y = 0; y < 3; y++ ) {
+              causal_bool_per_study_for_config[x][y] = 0; //zero out
+	    }
+	  }
+	  vector<int> nextConfigure(totalSnpCount, 0); 
+          for ( int j = 0; j < numCausal; j++ ) {
+            for ( int k = 0; k < num_of_studies; k++ ) {
+	      int studyk_offset = std::accumulate(num_snps_all.begin(), num_snps_all.begin()+k, 0);
+	      if ( causal_bool_per_study[k][j] == 1 ) { //if causal snp j exists in study k
+	        int loc_in_studyk = causal_idx_per_study[k][j];
+		int causal_val = bmask & 0x1;
+		causal_bool_per_study_for_config[k][j] = causal_val;
+		nextConfigure[studyk_offset + loc_in_studyk] = causal_val;
+		bmask = bmask >> 1;
+	      } else {
+	          continue;
+	      }
+	    }
+	  }
+	  
+	  /*
+	printf("causal bool per study for config\n");
+        for ( int ii = 0; ii < 2; ii++ ) {
+        for ( int jj = 0; jj < 3; jj++ ) {
+		printf("%d ", causal_bool_per_study_for_config[ii][jj]);
+	}
+	printf("\n");
+	}*/
+	  if (!checkOR(causal_bool_per_study_for_config, num_of_studies, numCausal)) {
+            continue;
+	  }
+	  //if (!checkAND(causal_bool_per_study_for_config, num_of_studies, numCausal)) {
+	  //  continue;
+	  //}
+	  //printf("next config to eval\n");
+	  //printVec(nextConfigure);
+          double tmp_likelihood = 0;
+          mat sigmaC = construct_diagC(nextConfigure, numCausal, causal_idx_per_study, causal_bool_per_study_for_config);
+          //printf("sigma C\n");
+	  //sigmaC.print(std::cout);
+
+          if ( haslowrank == true ) {
+             mycount += 1;
+             tmp_likelihood = lowrank_likelihood(nextConfigure, stat, sigma_g_squared, sigmaC) + log_prior(nextConfigure, numCausal, causal_bool_per_study_for_config); 
+             }
+          else {
+             mycount += 1;
+             tmp_likelihood = likelihood(nextConfigure, stat, sigma_g_squared, sigmaC) + log_prior(nextConfigure, numCausal, causal_bool_per_study_for_config);
+             }
+        
+         #pragma omp critical
+         sumLikelihood = addlogSpace(sumLikelihood, tmp_likelihood);
+	 //printf("sumLikelihood is %f\n", sumLikelihood);
+ 
+	 //printf("likelihood is %f\n", tmp_likelihood);
+	 //printf("exp likelihood is %f\n", exp(tmp_likelihood));
+
+         for ( int w = 0; w < num_of_studies; w++ ) {
+	   bool allZero = true;
+           for ( int v = 0; v < numCausal; v++ ) {
+             if (causal_bool_per_study_for_config[w][v] == 1) {
+	       allZero = false;
+	       break;
+	     }
+	   }
+	   if ( allZero ) {
+		   //printf("no causal in study %d\n", w);
+             noCausal[w] = addlogSpace(noCausal[w], tmp_likelihood);
+	   }
+	 }
+
+
+	 for ( int g = 0; g < numCausal; g++ ) {
+           bool sharedCausal = true;
+	   for ( int h = 0; h < num_of_studies; h++ ) {
+             if ( causal_bool_per_study_for_config[h][g] == 0 ) {
+               sharedCausal = false;
+	     }
+	   }
+	   if ( sharedCausal ) {
+             //printf("shared causal\n");
+             sharedPips[causal_locs[g]] =  addlogSpace(sharedPips[causal_locs[g]], tmp_likelihood);
+	     //printf("shared pip = %f", sharedPips[causal_locs[g]]);
+	   }
+	 }
+
+         for(int f = 0; f < totalSnpCount; f++) {
+            //for(int k = 0; k < num_of_studies; k++){
+                #pragma omp critical
+                postValues[f] = addlogSpace(postValues[f], tmp_likelihood * nextConfigure[f]);
+		//if ( nextConfigure[f] == 1 ) {
+                  //printf("updating index %d\n", f);
+		  //printf("added in log space %f\n", tmp_likelihood);
+		  //printf("post value for %d is %f\n", f, postValues[f]);
+		//}
+                //}
+         }        
+       }
+
+
+        #pragma omp critical
+        if(i % 1000 == 0 and i > curr_iter){
+            cerr << "\r                                                                 \r" << (double) (i) / (double) total_iteration * 100.0 << "%";
+            curr_iter = i;
+        }
+    }
+
+    //cout << "\ncomputing likelihood of all configurations took  " << (float)(clock()-start)/CLOCKS_PER_SEC << "seconds.\n";
+
+    for(int i = 0; i <= maxCausalSNP; i++) { //TODO what is this for, do I need to change it
+        histValues[i] = exp(histValues[i]-sumLikelihood);
+    }
+    printf("num total configs = %d\n", mycount);
+
+
+    return(sumLikelihood);
 }
 
 double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squared) {

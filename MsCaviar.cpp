@@ -82,6 +82,7 @@ int main( int argc, char *argv[]  ){
     string outputFileName = "";
     string sample_s = "";
     string num_causal_s = "";
+    string configsFile = "";
 
     while ((oc = getopt(argc, argv, "vhl:o:z:m:p:r:c:k:g:f:t:s:n:a:")) != -1) {
         switch (oc) {
@@ -121,6 +122,10 @@ int main( int argc, char *argv[]  ){
             case 'n':
                 sample_s = string(optarg);
                 break;
+	    // optional argument: file with configuration vectors
+	    case 'b':
+	       configsFile = string(optarg);
+	       break;
             // optional arguments: parameters for fine mapping
 	    case 'p':
 		sharing_param = atof(optarg);
@@ -180,7 +185,7 @@ int main( int argc, char *argv[]  ){
         exit(1);
     }
 
-    MCaviarModel Mcaviar(ldDir, zDir, snpMapFile, sample_sizes, num_causal, outputFileName, finalTotalCausalSNP, sharing_param, rho, histFlag, gamma, tau_sqr, sigma_g_squared, cutoff_threshold);
+    MCaviarModel Mcaviar(ldDir, zDir, snpMapFile, configsFile, sample_sizes, num_causal, outputFileName, finalTotalCausalSNP, sharing_param, rho, histFlag, gamma, tau_sqr, sigma_g_squared, cutoff_threshold);
     Mcaviar.run();
     Mcaviar.finishUp();
     return 0;
