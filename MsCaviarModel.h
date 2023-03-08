@@ -5,8 +5,6 @@
 #include <fstream>
 #include <string>
 #include <vector>
-#include <map>
-#include <unordered_map>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,7 +46,6 @@ public:
     vector<double> S_LONG_VEC;
     bool haslowrank = false;
     double cutoff_threshold;
-    vector<unordered_map<string, int>> snp_to_idx_all;
     vector<vector<int>> idx_to_snp_map;
     vector<string> all_snp_pos;
 
@@ -104,11 +101,6 @@ public:
                     temp_sig(i,j) = temp_LD->at(i * numSnps + j);
                 }
             }
-	    unordered_map<string, int> snp_to_idx;
-	    for ( int i = 0; i < temp_names.size(); i++ ) {
-                snp_to_idx[temp_names[i]] = i;
-	    }
-	    snp_to_idx_all.push_back(snp_to_idx);
 
 	    vector<int> idx_to_snp_studyi;
 	    idx_to_snp_map.push_back(idx_to_snp_studyi);
@@ -224,7 +216,7 @@ public:
             *BIG_SIGMA = *BIG_B;
             delete(BIG_B);
         }
-        post = new MPostCal(BIG_SIGMA, &S_LONG_VEC, snpCount, totalCausalSNP, num_causal, snpNames,snp_to_idx_all, sharing_param, gamma, tau_sqr, sigma_g_squared, num_of_studies, sample_sizes, num_snps_all, haslowrank, idx_to_snp_map, all_snp_pos);
+        post = new MPostCal(BIG_SIGMA, &S_LONG_VEC, snpCount, totalCausalSNP, num_causal, snpNames, sharing_param, gamma, tau_sqr, sigma_g_squared, num_of_studies, sample_sizes, num_snps_all, haslowrank, idx_to_snp_map, all_snp_pos);
     }
 
     /*

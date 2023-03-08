@@ -43,7 +43,6 @@ private:
     mat statMatrix;
     mat statMatrixtTran;
     vector<vector<string> > * SNP_NAME;
-    vector<unordered_map<string, int>> snp_to_idx_all;
     vector<int> sample_sizes;
     vector<int> num_snps_all;
     vector<int> num_causal;
@@ -68,10 +67,9 @@ public:
     /*
      constructor
     */
-    MPostCal(mat * BIG_SIGMA, vector<double> * S_LONG_VEC, int snpCount, const int MAX_causal, vector<int> num_causal, vector<vector<string> > * SNP_NAME, vector<unordered_map<string, int>> snp_to_idx_all, double sharing_param, double gamma, double t_squared, double s_squared, const int num_of_studies, vector<int> sample_sizes, vector<int> num_snps_all, bool lowrank, vector<vector<int>> idx_to_snp_map, vector<string> all_snp_pos) : maxCausalSNP(MAX_causal),num_of_studies(num_of_studies){
+    MPostCal(mat * BIG_SIGMA, vector<double> * S_LONG_VEC, int snpCount, const int MAX_causal, vector<int> num_causal, vector<vector<string> > * SNP_NAME, double sharing_param, double gamma, double t_squared, double s_squared, const int num_of_studies, vector<int> sample_sizes, vector<int> num_snps_all, bool lowrank, vector<vector<int>> idx_to_snp_map, vector<string> all_snp_pos) : maxCausalSNP(MAX_causal),num_of_studies(num_of_studies){
         this->gamma = gamma;
         this->SNP_NAME = SNP_NAME;
-	this-> snp_to_idx_all = snp_to_idx_all;
         this-> snpCount = snpCount;
 	this-> totalSnpCount = std::accumulate(num_snps_all.begin(), num_snps_all.end(), 0);
         //this-> maxCausalSNP = MAX_causal;
