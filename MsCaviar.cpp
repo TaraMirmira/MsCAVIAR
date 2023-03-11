@@ -83,8 +83,10 @@ int main( int argc, char *argv[]  ){
     string sample_s = "";
     string num_causal_s = "";
     string configsFile = "";
+    int num_groups = 0; //num columns in configsFile
+    int num_configs = 0; //num rows in configsFile
 
-    while ((oc = getopt(argc, argv, "vhl:o:z:m:p:r:c:k:g:f:t:s:n:a:")) != -1) {
+    while ((oc = getopt(argc, argv, "vhl:o:z:m:p:r:c:k:g:f:t:s:n:a:b:d:e")) != -1) {
         switch (oc) {
             case 'v':
                 cout << "Version 0.1\n" << endl;
@@ -126,6 +128,11 @@ int main( int argc, char *argv[]  ){
 	    case 'b':
 	       configsFile = string(optarg);
 	       break;
+	    case 'd':
+	       num_configs = atoi(optarg);
+	       break;
+	    case 'e':
+	       num_groups = atoi(optarg);
             // optional arguments: parameters for fine mapping
 	    case 'p':
 		sharing_param = atof(optarg);
@@ -166,6 +173,16 @@ int main( int argc, char *argv[]  ){
         exit(1);
     }
 
+    if ( configsFile != "" ) {
+      if (num_configs <= 0) {
+        cout << "Number of configs must be greater than 0" << endl;
+	exit(1);
+      }
+      if (num_groups <= 0) {
+        cout << "Number of groups must be greater than 0" << endl;
+      }
+    }
+
     vector<string> ldDir = read_dir(ldFile);
     vector<string> zDir = read_dir(zFile);
     vector<int> sample_sizes = read_sigma(sample_s);
@@ -185,7 +202,7 @@ int main( int argc, char *argv[]  ){
         exit(1);
     }
 
-    MCaviarModel Mcaviar(ldDir, zDir, snpMapFile, configsFile, sample_sizes, num_causal, outputFileName, finalTotalCausalSNP, sharing_param, rho, histFlag, gamma, tau_sqr, sigma_g_squared, cutoff_threshold);
+    MCaviarModel Mcaviar(ldDir, zDir, snpMapFile, configsFile, num_configs, num_groups, sample_sizes, num_causal, outputFileName, finalTotalCausalSNP, sharing_param, rho, histFlag, gamma, tau_sqr, sigma_g_squared, cutoff_threshold);
     Mcaviar.run();
     Mcaviar.finishUp();
     return 0;

@@ -36,6 +36,8 @@ public:
     vector<string> zDir;
     string snpMapFile;
     string configsFile;
+    int num_configs;
+    int num_groups;
     vector<int> sample_sizes;
     vector<int> num_causal; //number of causal snps in each study
     vector<int> num_snps_all; //number of snps in each study
@@ -46,13 +48,14 @@ public:
     vector<double> S_LONG_VEC;
     bool haslowrank = false;
     double cutoff_threshold;
-    vector<vector<int>> idx_to_snp_map;
+    vector<vector<int>> idx_to_snp_map; //union position to study level position
+    vector<vector<int>> idx_to_union_pos_map; //study level position to union position
     vector<string> all_snp_pos;
 
     /*
      consrtuctor for MCaviarModel
      */
-    MCaviarModel(vector<string> ldDir, vector<string> zDir, string snpMapFile, string configsFile, vector<int> sample_sizes, vector<int> num_causal, string outputFileName, const int totalCausalSNP, double sharing_param, double rho, bool histFlag, double gamma=0.01, double tau_sqr = 0.2, double sigma_g_squared = 5.2, double cutoff_threshold = 0) : totalCausalSNP(totalCausalSNP), num_of_studies(ldDir.size()) {
+    MCaviarModel(vector<string> ldDir, vector<string> zDir, string snpMapFile, string configsFile, int num_configs, int num_groups, vector<int> sample_sizes, vector<int> num_causal, string outputFileName, const int totalCausalSNP, double sharing_param, double rho, bool histFlag, double gamma=0.01, double tau_sqr = 0.2, double sigma_g_squared = 5.2, double cutoff_threshold = 0) : totalCausalSNP(totalCausalSNP), num_of_studies(ldDir.size()) {
         this->histFlag = histFlag;
 	this->sharing_param = sharing_param;
         this->rho = rho;
@@ -61,6 +64,8 @@ public:
         this->zDir  = zDir;
 	this->snpMapFile = snpMapFile;
 	this->configsFile = configsFile;
+	this->num_configs = num_configs;
+	this->num_groups = num_groups;
         this->outputFileName = outputFileName;
 //        this->totalCausalSNP = totalCausalSNP;
         this->tau_sqr = tau_sqr;
@@ -104,6 +109,8 @@ public:
 
 	    vector<int> idx_to_snp_studyi;
 	    idx_to_snp_map.push_back(idx_to_snp_studyi);
+	    vector<int> idx_to_union_pos_studyi;
+	    idx_to_union_pos_map.push_back(idx_to_union_pos_studyi);
 
             sigma->push_back(temp_sig);
             snpNames->push_back(temp_names);
@@ -120,6 +127,18 @@ public:
 //        num_of_studies(snpNames->size());
 
 	importSnpMap(snpMapFile, num_of_studies+1, &all_snp_pos, &idx_to_snp_map);
+	
+	for ( int i = 0; i < num_of_studies; i++ ) {
+          for ( int j = 0; j < idx_to_snp_map[i].size(); j++ ) {
+            if (idx_to_snp_map[i][j] >= 0 ) {
+              idx_to_union_pos_map[i].push_back(j);
+	    }
+	  }
+          if ( idx_to_union_pos_map[i].size() != num_snps_all[i] ) {
+            printf("Invariant does not hold\n");
+            exit(1);
+	  }
+	}
 
 	int totalSnpCount = std::accumulate(num_snps_all.begin(), num_snps_all.end(), 0);
 
@@ -216,7 +235,7 @@ public:
             *BIG_SIGMA = *BIG_B;
             delete(BIG_B);
         }
-        post = new MPostCal(BIG_SIGMA, &S_LONG_VEC, snpCount, totalCausalSNP, num_causal, snpNames, sharing_param, gamma, tau_sqr, sigma_g_squared, num_of_studies, sample_sizes, num_snps_all, haslowrank, idx_to_snp_map, all_snp_pos);
+        post = new MPostCal(BIG_SIGMA, &S_LONG_VEC, snpCount, configsFile, num_configs, num_groups, totalCausalSNP, num_causal, snpNames, sharing_param, gamma, tau_sqr, sigma_g_squared, num_of_studies, sample_sizes, num_snps_all, haslowrank, idx_to_snp_map, idx_to_union_pos_map, all_snp_pos);
     }
 
     /*

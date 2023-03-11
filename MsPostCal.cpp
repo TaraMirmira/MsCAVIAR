@@ -9,13 +9,13 @@
 #include <math.h>
 #include "MsUtil.h"
 #include "MsPostCal.h"
-
+#include <sys/mman.h>
 #include <omp.h>
 #include <ctime>
 
 using namespace arma;
 
-double MPostCal::log_prior(vector<int> configure, int numCausal, int causal_bool_per_study[2][3]) {
+double MPostCal::log_prior(vector<int> configure, int numCausal, int **causal_bool_per_study) {
   if (num_of_studies > 2) {
     cout << "This prior does not work for more than 2 studies yet\n";
     exit(1);
@@ -57,14 +57,7 @@ double MPostCal::log_prior(vector<int> configure, int numCausal, int causal_bool
 
 
 // calibrate for sample size imbalance
-mat MPostCal::construct_diagC(vector<int> configure, int numCausal, int causal_idx_per_study[2][3], int causal_bool_per_study[2][3]) {
-	/*printf("causal bool per study\n");
-        for ( int i = 0; i < 2; i++ ) {
-        for ( int j = 0; j < 3; j++ ) {
-		printf("%d ", causal_bool_per_study[i][j]);
-	}
-	printf("\n");
-	}*/
+mat MPostCal::construct_diagC(vector<int> configure, int numCausal, int **causal_idx_per_study, int **causal_bool_per_study) {
     mat Identity_M = mat(num_of_studies, num_of_studies, fill::eye);
     mat Matrix_of_sigmaG = mat(num_of_studies, num_of_studies);
     int min_size = * std::min_element(sample_sizes.begin(), sample_sizes.end());
@@ -399,7 +392,7 @@ vector<int> MPostCal::constructConfig(vector<int> input_causal_locs) {
 }
 
 
-double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double sigma_g_squared, int total_iteration, char* all_configs_file) {
+double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double sigma_g_squared) {
     double sumLikelihood = 0;
     long int total_iteration = 0 ;
     int mycount = 0;
@@ -411,7 +404,6 @@ double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double
 
     //clock_t start = clock();
     vector<int> configure;
-    int num;
 
     int chunksize;
     if(total_iteration < 1000){
@@ -426,16 +418,31 @@ double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double
     }
     int curr_iter = 0;
 
+    char *configs = NULL;
+    size_t size_configs_file = 0;
+    int status = safe_mmap_read_only(configsFile, &configs, &size_configs_file);
+    if ( status < 0 ) {
+      printf("mmap did not succeed\n");
+      exit(1);
+    }
+    if ((num_configs * num_groups * sizeof(int)) != size_configs_file) {
+      exit(1);
+    }
 
-    #pragma omp parallel for schedule(static,chunksize) private(configure,num)
-    for(long int i = 0; i < total_iteration; i++) {
-	vector<int> causal_locs_input = ; //TODO
-        //TODO read config into configure
+    //TODO fix this pragma
+    #pragma omp parallel for schedule(static,chunksize) private(configure)
+    for(long int cidx = 0; cidx < num_configs; cidx++) {
+	int * input_causal_locs = (int *) (configs + (cidx * num_configs * num_groups * sizeof(int))); //offset for (cidx)th config 
 
+        vector<int> config(totalSnpCount, 0);
 	int numCausal = 0;
-	for ( int i = 0; i < causal_locs_input.size(); i++ ) {
-          numCausal += 1;
-	}
+        for ( int i = 0; i < num_groups; i++ ) {
+          if ( input_causal_locs[i] >= 0 ) {
+            config[input_causal_locs[i]] = 1;
+	    numCausal += 1;
+          }
+        }
+
 
         if ( numCausal == 0 ) { //if no causal, just update sum likelihood, nothing else should change
                 vector<int> tempConfigure(totalSnpCount, 0);
@@ -469,154 +476,119 @@ double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double
 	}
 
 
-	//TODO
-	//need a max_causal_per_study
-	//already have num_snps_per_study in num_snps_all
 
 	vector<int> causal_locs;
 	//printf("causal locs are: ");
-	for ( int i = 0; i < unionSnpCount; i++ ) {
-            if ( configure[i] == 1 ) {
-	        causal_locs.push_back(i);
-		//printf("%d ", i);
+	int curr_study = 0;
+	int curr_cum_num_snps = num_snps_all[curr_study];
+	for ( int i = 0; i < num_groups; i++ ) {
+	    int causal_snp_global_idx = input_causal_locs[i];
+            if ( causal_snp_global_idx >= 0 ) {
+	      //find which study this is associated with and find the snp's global position i.e. union pos
+	      while (causal_snp_global_idx >= curr_cum_num_snps) {
+                curr_study += 1;
+		curr_cum_num_snps += num_snps_all[curr_study];
+	      }
+	      int union_pos = idx_to_union_pos_map[curr_study][causal_snp_global_idx - (curr_cum_num_snps - num_snps_all[curr_study])];
+	      causal_locs.push_back(union_pos);
 	    }    
 	}
+	//at this point, causal locs could have duplicates and is not sorted
+	std::sort( causal_locs.begin(), causal_locs.end() );
+        causal_locs.erase( unique( causal_locs.begin(), causal_locs.end() ), causal_locs.end() );
+	//reset num causal to causal_locs.size(). num causal is now the unique number of causal snps in this config
+	numCausal = (int)causal_locs.size();
+
 	//printf("\n");
-        
-	
-	//printf("total snp count is: %d\n", totalSnpCount);
-        vector<int> startConfigure(totalSnpCount, 0);
 
 
-	int causal_idx_per_study[2][3]; //2 = num of studies, 3 = max causal TODO this is hardcoded for now
-	int causal_bool_per_study[2][3]; 
-	for ( int i = 0; i < 2; i ++ ) {
-          for ( int j = 0; j < 3; j++ ) {
-            causal_idx_per_study[i][j] = 0; //zero out
-	    causal_bool_per_study[i][j] = 0; //zero out
+        int** causal_bool_per_study_for_config = new int*[num_of_studies]; //this implicitly mallocs so it must be freed
+        int** causal_idx_per_study = new int*[num_of_studies]; //this implicitly mallocs so it must be freed
+	for ( int i = 0; i < num_of_studies; i++ ) {
+          causal_bool_per_study_for_config[i] = new int[numCausal];
+          causal_idx_per_study[i] = new int[numCausal];
+	}
+	memset(causal_bool_per_study_for_config, 0, num_of_studies * numCausal);
+	memset(causal_idx_per_study, 0, num_of_studies * numCausal);
+
+	int aux_idx = 0;
+	while ( aux_idx < num_groups) { //find first not -1 entry
+          if ( input_causal_locs[aux_idx] < 0 ) {
+            aux_idx += 1;
+	  } else {
+            break;
 	  }
 	}
+	curr_study = 0;
+	curr_cum_num_snps = num_snps_all[curr_study];
 	for ( int i = 0; i < num_of_studies; i++ ) {
             for ( int j = 0; j < numCausal; j++ ) {
 		int loc_in_studyi = idx_to_snp_map[i][causal_locs[j]];
 		//printf("loc in study %d is %d\n", i, loc_in_studyi);
 		int studyi_offset = std::accumulate(num_snps_all.begin(), num_snps_all.begin()+i, 0);
                 if (loc_in_studyi >= 0) { //means it exists in study i
+	          int global_idx = studyi_offset + loc_in_studyi;
+		  if ( global_idx >= curr_cum_num_snps ) {
+                    curr_study += 1;
+		    curr_cum_num_snps += num_snps_all[curr_study];
+		    break;
+		  }
+		  if ( input_causal_locs[aux_idx] == global_idx ) {
+		    causal_bool_per_study_for_config[i][j] = 1;
 		    causal_idx_per_study[i][j] = loc_in_studyi;
-		    causal_bool_per_study[i][j] = 1;
-		    startConfigure[studyi_offset + loc_in_studyi] = 1;
-		} else {
-                    causal_idx_per_study[i][j] = -1;
-		    causal_bool_per_study[i][j] = 0;
+		    while ( aux_idx < num_groups) {
+                      if ( input_causal_locs[aux_idx] < 0 ) {
+                        aux_idx += 1;
+		      } else {
+                        break;
+		      }
+		    }
+		  }
 		}
 	    }	    
-	}
-       /* 
-	printf("causal index per study\n");
-        for ( int i = 0; i < 2; i++ ) {
-        for ( int j = 0; j < 3; j++ ) {
-		printf("%d ", causal_idx_per_study[i][j]);
-	}
-	printf("\n");
-	}
-	printf("causal bool per study\n");
-        for ( int i = 0; i < 2; i++ ) {
-        for ( int j = 0; j < 3; j++ ) {
-		printf("%d ", causal_bool_per_study[i][j]);
-	}
-	printf("\n");
-	}*/
-
-	int total_num_additional_configs = 0;
-        int num_additional_configs[3]; //TODO hardcoded for now as max size of 3 because max causal is 3
-	for ( int i = 0; i < 3; i++ ) {
-          num_additional_configs[i] = 0; //zero out
-	}
-        for ( int i = 0; i < numCausal; i++ ) {
-	    for ( int j = 0; j < num_of_studies; j++ ) {
-                if ( causal_bool_per_study[j][i] == 1 ) {
-                    total_num_additional_configs += 1;
-		}
+	    if ( aux_idx == num_groups ) {
+              break;
 	    }
-	}	
-	total_num_additional_configs = (int)(pow(2, total_num_additional_configs) - 1);
-//	printf("num additional = %d\n", total_num_additional_configs);
-
-
-	for ( int i = 0; i < total_num_additional_configs; i++ ) {
-	  int causal_bool_per_study_for_config[2][3];
-	  int bmask = i+1;
-	  for ( int x = 0; x < 2; x++ ) {
-	    for ( int y = 0; y < 3; y++ ) {
-              causal_bool_per_study_for_config[x][y] = 0; //zero out
-	    }
-	  }
-	  vector<int> nextConfigure(totalSnpCount, 0); 
-          for ( int j = 0; j < numCausal; j++ ) {
-            for ( int k = 0; k < num_of_studies; k++ ) {
-	      int studyk_offset = std::accumulate(num_snps_all.begin(), num_snps_all.begin()+k, 0);
-	      if ( causal_bool_per_study[k][j] == 1 ) { //if causal snp j exists in study k
-	        int loc_in_studyk = causal_idx_per_study[k][j];
-		int causal_val = bmask & 0x1;
-		causal_bool_per_study_for_config[k][j] = causal_val;
-		nextConfigure[studyk_offset + loc_in_studyk] = causal_val;
-		bmask = bmask >> 1;
-	      } else {
-	          continue;
-	      }
-	    }
-	  }
-	  
-	  /*
-	printf("causal bool per study for config\n");
-        for ( int ii = 0; ii < 2; ii++ ) {
-        for ( int jj = 0; jj < 3; jj++ ) {
-		printf("%d ", causal_bool_per_study_for_config[ii][jj]);
 	}
-	printf("\n");
-	}*/
-	  if (!checkOR(causal_bool_per_study_for_config, num_of_studies, numCausal)) {
-            continue;
-	  }
-	  //if (!checkAND(causal_bool_per_study_for_config, num_of_studies, numCausal)) {
-	  //  continue;
-	  //}
-	  //printf("next config to eval\n");
-	  //printVec(nextConfigure);
-          double tmp_likelihood = 0;
-          mat sigmaC = construct_diagC(nextConfigure, numCausal, causal_idx_per_study, causal_bool_per_study_for_config);
-          //printf("sigma C\n");
-	  //sigmaC.print(std::cout);
+	if ( aux_idx != num_groups) {
+          printf("This did not work as expected\n");
+	  exit(1);
+	}
 
-          if ( haslowrank == true ) {
-             mycount += 1;
-             tmp_likelihood = lowrank_likelihood(nextConfigure, stat, sigma_g_squared, sigmaC) + log_prior(nextConfigure, numCausal, causal_bool_per_study_for_config); 
-             }
-          else {
-             mycount += 1;
-             tmp_likelihood = likelihood(nextConfigure, stat, sigma_g_squared, sigmaC) + log_prior(nextConfigure, numCausal, causal_bool_per_study_for_config);
-             }
+        double tmp_likelihood = 0;
+        mat sigmaC = construct_diagC(config, numCausal, causal_idx_per_study, causal_bool_per_study_for_config);
+        //printf("sigma C\n");
+	//sigmaC.print(std::cout);
+
+        if ( haslowrank == true ) {
+           mycount += 1;
+           tmp_likelihood = lowrank_likelihood(config, stat, sigma_g_squared, sigmaC) + log_prior(config, numCausal, causal_bool_per_study_for_config); 
+           }
+        else {
+           mycount += 1;
+           tmp_likelihood = likelihood(config, stat, sigma_g_squared, sigmaC) + log_prior(config, numCausal, causal_bool_per_study_for_config);
+           }
         
-         #pragma omp critical
-         sumLikelihood = addlogSpace(sumLikelihood, tmp_likelihood);
-	 //printf("sumLikelihood is %f\n", sumLikelihood);
+        #pragma omp critical
+        sumLikelihood = addlogSpace(sumLikelihood, tmp_likelihood);
+	//printf("sumLikelihood is %f\n", sumLikelihood);
  
-	 //printf("likelihood is %f\n", tmp_likelihood);
-	 //printf("exp likelihood is %f\n", exp(tmp_likelihood));
+	//printf("likelihood is %f\n", tmp_likelihood);
+	//printf("exp likelihood is %f\n", exp(tmp_likelihood));
 
-         for ( int w = 0; w < num_of_studies; w++ ) {
-	   bool allZero = true;
-           for ( int v = 0; v < numCausal; v++ ) {
-             if (causal_bool_per_study_for_config[w][v] == 1) {
-	       allZero = false;
-	       break;
-	     }
-	   }
-	   if ( allZero ) {
-		   //printf("no causal in study %d\n", w);
-             noCausal[w] = addlogSpace(noCausal[w], tmp_likelihood);
-	   }
-	 }
+        for ( int w = 0; w < num_of_studies; w++ ) {
+	  bool allZero = true;
+          for ( int v = 0; v < numCausal; v++ ) {
+            if (causal_bool_per_study_for_config[w][v] == 1) {
+	      allZero = false;
+	      break;
+	    }
+	  }
+	  if ( allZero ) {
+	    //printf("no causal in study %d\n", w);
+            noCausal[w] = addlogSpace(noCausal[w], tmp_likelihood);
+	  }
+	}
 
 
 	 for ( int g = 0; g < numCausal; g++ ) {
@@ -636,7 +608,7 @@ double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double
          for(int f = 0; f < totalSnpCount; f++) {
             //for(int k = 0; k < num_of_studies; k++){
                 #pragma omp critical
-                postValues[f] = addlogSpace(postValues[f], tmp_likelihood * nextConfigure[f]);
+                postValues[f] = addlogSpace(postValues[f], tmp_likelihood * config[f]);
 		//if ( nextConfigure[f] == 1 ) {
                   //printf("updating index %d\n", f);
 		  //printf("added in log space %f\n", tmp_likelihood);
@@ -644,23 +616,27 @@ double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double
 		//}
                 //}
          }        
-       }
 
+	 for(int i = 0; i < num_of_studies; ++i) {
+           delete[] causal_bool_per_study_for_config[i];
+           delete[] causal_idx_per_study[i];
+         }
+         //Free the array of pointers
+         delete[] causal_bool_per_study_for_config;
+         delete[] causal_idx_per_study;
 
         #pragma omp critical
-        if(i % 1000 == 0 and i > curr_iter){
-            cerr << "\r                                                                 \r" << (double) (i) / (double) total_iteration * 100.0 << "%";
-            curr_iter = i;
+        if(cidx % 1000 == 0 and cidx > curr_iter){
+            cerr << "\r                                                                 \r" << (double) (cidx) / (double) num_configs * 100.0 << "%";
+            curr_iter = cidx;
         }
     }
 
     //cout << "\ncomputing likelihood of all configurations took  " << (float)(clock()-start)/CLOCKS_PER_SEC << "seconds.\n";
 
-    for(int i = 0; i <= maxCausalSNP; i++) { //TODO what is this for, do I need to change it
-        histValues[i] = exp(histValues[i]-sumLikelihood);
-    }
     printf("num total configs = %d\n", mycount);
 
+    status = munmap(configs, size_configs_file);
 
     return(sumLikelihood);
 }
@@ -767,14 +743,22 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
         vector<int> startConfigure(totalSnpCount, 0);
 
 
-	int causal_idx_per_study[2][3]; //2 = num of studies, 3 = max causal TODO this is hardcoded for now
-	int causal_bool_per_study[2][3]; 
-	for ( int i = 0; i < 2; i ++ ) {
-          for ( int j = 0; j < 3; j++ ) {
-            causal_idx_per_study[i][j] = 0; //zero out
-	    causal_bool_per_study[i][j] = 0; //zero out
-	  }
+	int** causal_idx_per_study = new int*[num_of_studies];
+	int** causal_bool_per_study = new int*[num_of_studies];
+	for ( int i = 0; i < num_of_studies; i++ ) { //3 is hardcoded as max causal for now
+	  causal_idx_per_study[i] = new int[3];
+	  causal_bool_per_study[i] = new int[3];
 	}
+	memset(causal_idx_per_study, 0, num_of_studies * 3);
+	memset(causal_bool_per_study, 0, num_of_studies * 3);
+	//int causal_idx_per_study[2][3]; //2 = num of studies, 3 = max causal TODO this is hardcoded for now
+	//int causal_bool_per_study[2][3]; 
+	//for ( int i = 0; i < 2; i ++ ) {
+        //  for ( int j = 0; j < 3; j++ ) {
+        //    causal_idx_per_study[i][j] = 0; //zero out
+	//    causal_bool_per_study[i][j] = 0; //zero out
+	//  }
+	//}
 	for ( int i = 0; i < num_of_studies; i++ ) {
             for ( int j = 0; j < numCausal; j++ ) {
 		int loc_in_studyi = idx_to_snp_map[i][causal_locs[j]];
@@ -823,13 +807,18 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 
 
 	for ( int i = 0; i < total_num_additional_configs; i++ ) {
-	  int causal_bool_per_study_for_config[2][3];
-	  int bmask = i+1;
-	  for ( int x = 0; x < 2; x++ ) {
-	    for ( int y = 0; y < 3; y++ ) {
-              causal_bool_per_study_for_config[x][y] = 0; //zero out
-	    }
+          int **causal_bool_per_study_for_config = new int*[num_of_studies];
+	  for ( int j = 0; j < num_of_studies; j++ ) {
+            causal_bool_per_study_for_config[j] = new int[3];
 	  }
+	  memset(causal_bool_per_study_for_config, 0, num_of_studies * 3);
+	  //int causal_bool_per_study_for_config[2][3];
+	  //for ( int x = 0; x < 2; x++ ) {
+	  //  for ( int y = 0; y < 3; y++ ) {
+          //    causal_bool_per_study_for_config[x][y] = 0; //zero out
+	  //  }
+	  //}
+	  int bmask = i+1;
 	  vector<int> nextConfigure(totalSnpCount, 0); 
           for ( int j = 0; j < numCausal; j++ ) {
             for ( int k = 0; k < num_of_studies; k++ ) {
@@ -925,6 +914,14 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
          }        
        }
 
+	for(int i = 0; i < num_of_studies; ++i) {
+           delete[] causal_idx_per_study[i];
+           delete[] causal_bool_per_study[i];
+         }
+         //Free the array of pointers
+         delete[] causal_idx_per_study;
+         delete[] causal_bool_per_study;
+
 
         #pragma omp critical
         if(i % 1000 == 0 and i > curr_iter){
@@ -944,7 +941,7 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
     return(sumLikelihood);
 }
 
-bool MPostCal::checkAND(int causal_bool_per_study_for_config[2][3], int num_of_studies, int numCausal) {
+bool MPostCal::checkAND(int **causal_bool_per_study_for_config, int num_of_studies, int numCausal) {
   int sum = 0;
   for ( int i = 0; i < numCausal; i++ ) {
     int b = 0;
@@ -961,7 +958,7 @@ bool MPostCal::checkAND(int causal_bool_per_study_for_config[2][3], int num_of_s
   return false;
 }
 
-bool MPostCal::checkOR(int causal_bool_per_study_for_config[2][3], int num_of_studies, int numCausal) {
+bool MPostCal::checkOR(int **causal_bool_per_study_for_config, int num_of_studies, int numCausal) {
   int sum = 0;
   for ( int i = 0; i < numCausal; i++ ) {
     int b = 0;
@@ -983,7 +980,11 @@ vector<char> MPostCal::findOptimalSetGreedy(vector<double> * stat, double sigma_
 
     vector<char> causalSet(totalSnpCount,'0');
 
-    totalLikeLihoodLOG = computeTotalLikelihood(stat, sigma_g_squared);
+    if (configsFile != "") {
+      totalLikeLihoodLOG = computeTotalLikelihoodGivenConfigs(stat, sigma_g_squared);
+    } else {
+      totalLikeLihoodLOG = computeTotalLikelihood(stat, sigma_g_squared);
+    }
 
     export2File(outputFileName+"_log.txt", exp(totalLikeLihoodLOG)); //Output the total likelihood to the log File
     for(int i = 0; i < totalSnpCount; i++) {

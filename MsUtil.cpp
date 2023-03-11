@@ -13,9 +13,40 @@
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_eigen.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <fcntl.h>
+
 
 using namespace std;
 using namespace arma;
+
+
+int safe_mmap_read_only(string filename, char **ptr_mmaped_file, size_t *ptr_file_size) {
+  int fd;
+  struct stat filestat;
+  size_t len;
+  fd = open(filename.c_str(), O_RDONLY);
+  if ( fd < 0 ) {
+    printf("Could not open %s\n", filename.c_str());
+    return -1;
+  }
+  int status = fstat(fd, &filestat);
+  if ( status < 0 ) {
+    return -1;
+  }
+  len = filestat.st_size;
+  if ( len == 0 ) {
+    *ptr_mmaped_file = NULL;
+    *ptr_file_size = 0;
+  } else {
+    *ptr_mmaped_file = (char *)mmap(NULL, (size_t) len, PROT_READ, MAP_SHARED, fd, 0);
+  }
+  close(fd);
+  *ptr_file_size = (size_t) len;
+  return 0;
+}
 
 long int fact(int n) {
     if(n==0)

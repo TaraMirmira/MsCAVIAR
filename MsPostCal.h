@@ -28,6 +28,9 @@ private:
     double * sharedPips;
     double * histValues;    //the probability of the number of causal SNPs, we make the histogram of the causal SNPs
     int snpCount;        //total number of variants (SNP) in a locus
+    string configsFile; //optional configs file, will be empty string if not provided
+    int num_configs;
+    int num_groups;
     const int maxCausalSNP;    //maximum number of causal variants to consider in a locus
     double sigmaDet;    //determinant of matrix
 
@@ -47,6 +50,7 @@ private:
     vector<int> num_snps_all;
     vector<int> num_causal;
     vector<vector<int>> idx_to_snp_map;
+    vector<vector<int>> idx_to_union_pos_map;
     vector<string> all_snp_pos;
     int unionSnpCount;
 
@@ -67,10 +71,13 @@ public:
     /*
      constructor
     */
-    MPostCal(mat * BIG_SIGMA, vector<double> * S_LONG_VEC, int snpCount, const int MAX_causal, vector<int> num_causal, vector<vector<string> > * SNP_NAME, double sharing_param, double gamma, double t_squared, double s_squared, const int num_of_studies, vector<int> sample_sizes, vector<int> num_snps_all, bool lowrank, vector<vector<int>> idx_to_snp_map, vector<string> all_snp_pos) : maxCausalSNP(MAX_causal),num_of_studies(num_of_studies){
+    MPostCal(mat * BIG_SIGMA, vector<double> * S_LONG_VEC, int snpCount, string configsFile, int num_configs, int num_groups, const int MAX_causal, vector<int> num_causal, vector<vector<string> > * SNP_NAME, double sharing_param, double gamma, double t_squared, double s_squared, const int num_of_studies, vector<int> sample_sizes, vector<int> num_snps_all, bool lowrank, vector<vector<int>> idx_to_snp_map, vector<vector<int>> idx_to_union_pos_map, vector<string> all_snp_pos) : maxCausalSNP(MAX_causal),num_of_studies(num_of_studies){
         this->gamma = gamma;
         this->SNP_NAME = SNP_NAME;
         this-> snpCount = snpCount;
+	this->configsFile = configsFile;
+	this->num_configs = num_configs;
+	this->num_groups = num_groups;
 	this-> totalSnpCount = std::accumulate(num_snps_all.begin(), num_snps_all.end(), 0);
         //this-> maxCausalSNP = MAX_causal;
         //this-> postValues = new double [snpCount];
@@ -94,6 +101,7 @@ public:
 	this-> num_snps_all = num_snps_all;
         this-> haslowrank = lowrank;
 	this-> idx_to_snp_map = idx_to_snp_map;
+	this-> idx_to_union_pos_map = idx_to_union_pos_map;
 	this-> all_snp_pos = all_snp_pos;
 	this-> unionSnpCount = all_snp_pos.size();
 	this-> sharedPips = new double [unionSnpCount];
@@ -136,14 +144,14 @@ public:
     /*
      * Calculate prior probability of given configuration vector
      * */
-    double log_prior(vector<int> configure, int numCaual, int causal_bool_per_study[2][3]);
+    double log_prior(vector<int> configure, int numCaual, int **causal_bool_per_study);
 
     /*
      construct sigma_C by the kronecker product in paper, it is mn by mn. the variance for vec(lambdaC)|vec(C)
      :param configure the causal status vector of 0 and 1
      :return diagC is the variance matrix for (lamdaC|C)
      */
-    mat construct_diagC(vector<int> configure, int numCausal, int causal_idx_per_study[2][3], int causal_bool_per_study[2][3]);
+    mat construct_diagC(vector<int> configure, int numCausal, int **causal_idx_per_study, int **causal_bool_per_study);
 
     /*
      compute likelihood of each configuration by Woodbury
@@ -172,9 +180,10 @@ public:
      find the total likelihood given the z_score and sigma_g_squared
      */
     double computeTotalLikelihood(vector<double> * stat, double sigma_g_squared) ;
+    double computeTotalLikelihoodGivenConfigs(vector<double> * stat, double sigma_g_squared) ;
 
-    bool checkOR(int causal_bool_per_study_for_config[2][3], const int num_of_studies, int numCausal);
-    bool checkAND(int causal_bool_per_study_for_config[2][3], const int num_of_studies, int numCausal);
+    bool checkOR(int **causal_bool_per_study_for_config, const int num_of_studies, int numCausal);
+    bool checkAND(int **causal_bool_per_study_for_config, const int num_of_studies, int numCausal);
 
     /*find configuration from iteration in string*/
     vector<int> findConfig(int iter);

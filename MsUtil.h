@@ -26,6 +26,7 @@ struct by_number {
     }
 };
 
+int safe_mmap_read_only(string filename, char **ptr_mmaped_file, size_t *ptr_file_size);
 
 /*
  convert int to string
