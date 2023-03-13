@@ -430,9 +430,10 @@ double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double
     }
 
     //TODO fix this pragma
-    #pragma omp parallel for schedule(static,chunksize) private(configure)
+    //#pragma omp parallel for schedule(static,chunksize) private(configure)
+    #pragma omp parallel for
     for(long int cidx = 0; cidx < num_configs; cidx++) {
-	int * input_causal_locs = (int *) (configs + (cidx * num_configs * num_groups * sizeof(int))); //offset for (cidx)th config 
+	int * input_causal_locs = (int *) (configs + (cidx * num_groups * sizeof(int))); //offset for (cidx)th config 
 
         vector<int> config(totalSnpCount, 0);
 	int numCausal = 0;
@@ -442,6 +443,7 @@ double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double
 	    numCausal += 1;
           }
         }
+	printVec(config);
 
 
         if ( numCausal == 0 ) { //if no causal, just update sum likelihood, nothing else should change
@@ -508,9 +510,10 @@ double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double
           causal_bool_per_study_for_config[i] = new int[numCausal];
           causal_idx_per_study[i] = new int[numCausal];
 	}
-	memset(causal_bool_per_study_for_config, 0, num_of_studies * numCausal);
-	memset(causal_idx_per_study, 0, num_of_studies * numCausal);
-
+	for ( int i = 0; i < num_of_studies; i++ ) {
+	  memset(causal_bool_per_study_for_config[i], 0, numCausal);
+	  memset(causal_idx_per_study[i], 0, numCausal);
+	}
 	int aux_idx = 0;
 	while ( aux_idx < num_groups) { //find first not -1 entry
           if ( input_causal_locs[aux_idx] < 0 ) {
@@ -520,8 +523,9 @@ double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double
 	  }
 	}
 	curr_study = 0;
-	curr_cum_num_snps = num_snps_all[curr_study];
+	curr_cum_num_snps = 0;
 	for ( int i = 0; i < num_of_studies; i++ ) {
+	    curr_cum_num_snps += num_snps_all[i];
             for ( int j = 0; j < numCausal; j++ ) {
 		int loc_in_studyi = idx_to_snp_map[i][causal_locs[j]];
 		//printf("loc in study %d is %d\n", i, loc_in_studyi);
@@ -529,14 +533,15 @@ double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double
                 if (loc_in_studyi >= 0) { //means it exists in study i
 	          int global_idx = studyi_offset + loc_in_studyi;
 		  if ( global_idx >= curr_cum_num_snps ) {
-                    curr_study += 1;
-		    curr_cum_num_snps += num_snps_all[curr_study];
+                    curr_study += 1; //none causal in ith study, skip to next study
+		    //curr_cum_num_snps += num_snps_all[curr_study];
 		    break;
 		  }
-		  if ( input_causal_locs[aux_idx] == global_idx ) {
+		  else if ( input_causal_locs[aux_idx] == global_idx ) { //we have caught up to aux_idx location
+		    aux_idx += 1; //need to increment aux idx to next loc
 		    causal_bool_per_study_for_config[i][j] = 1;
 		    causal_idx_per_study[i][j] = loc_in_studyi;
-		    while ( aux_idx < num_groups) {
+		    while ( aux_idx < num_groups) { //reset aux idx to next causal loc
                       if ( input_causal_locs[aux_idx] < 0 ) {
                         aux_idx += 1;
 		      } else {
@@ -545,8 +550,8 @@ double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double
 		    }
 		  }
 		}
-	    }	    
-	    if ( aux_idx == num_groups ) {
+	    } 
+	    if ( aux_idx == num_groups ) { //if we have incremented aux idx past the end, then we are all done
               break;
 	    }
 	}
@@ -749,8 +754,10 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 	  causal_idx_per_study[i] = new int[3];
 	  causal_bool_per_study[i] = new int[3];
 	}
-	memset(causal_idx_per_study, 0, num_of_studies * 3);
-	memset(causal_bool_per_study, 0, num_of_studies * 3);
+	for ( int i = 0; i < num_of_studies; i++ ) {
+	  memset(causal_idx_per_study, 0, 3);
+	  memset(causal_bool_per_study, 0, 3);
+	}
 	//int causal_idx_per_study[2][3]; //2 = num of studies, 3 = max causal TODO this is hardcoded for now
 	//int causal_bool_per_study[2][3]; 
 	//for ( int i = 0; i < 2; i ++ ) {

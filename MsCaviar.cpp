@@ -86,7 +86,13 @@ int main( int argc, char *argv[]  ){
     int num_groups = 0; //num columns in configsFile
     int num_configs = 0; //num rows in configsFile
 
-    while ((oc = getopt(argc, argv, "vhl:o:z:m:p:r:c:k:g:f:t:s:n:a:b:d:e")) != -1) {
+    while ((oc = getopt(argc, argv, "vhl:o:z:m:p:r:c:k:g:f:t:s:n:a:b:d:e:x")) != -1) {
+	    //TODO P3 last char in this colon separated list does not work, optarg comes in as null. -x is dummy flag. Should it be :x: (colon at end)?
+	    printf("Hello world\n");
+	if ( (optarg == NULL) || (*optarg == '\0') ) {
+          printf("optarg is NULL\n");
+	  exit(1);
+	}
         switch (oc) {
             case 'v':
                 cout << "Version 0.1\n" << endl;
@@ -133,6 +139,7 @@ int main( int argc, char *argv[]  ){
 	       break;
 	    case 'e':
 	       num_groups = atoi(optarg);
+	       break;
             // optional arguments: parameters for fine mapping
 	    case 'p':
 		sharing_param = atof(optarg);
@@ -163,6 +170,9 @@ int main( int argc, char *argv[]  ){
             case 'a':
                 cutoff_threshold = atof(optarg);
                 break;
+	    case 'x':
+		printf("Hello world flag x\n");
+		break;
             default:
                 break;
         }
