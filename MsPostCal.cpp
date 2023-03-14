@@ -511,9 +511,27 @@ double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double
           causal_idx_per_study[i] = new int[numCausal];
 	}
 	for ( int i = 0; i < num_of_studies; i++ ) {
-	  memset(causal_bool_per_study_for_config[i], 0, numCausal);
-	  memset(causal_idx_per_study[i], 0, numCausal);
+	  memset(causal_bool_per_study_for_config[i], 0, numCausal * sizeof(int));
+	  memset(causal_idx_per_study[i], 0, numCausal * sizeof(int));
 	}
+
+	printf("Start causal bool per study for config\n");
+        for ( int i = 0; i < num_of_studies; i++ ) {
+          for ( int j = 0; j < numCausal; j++ ) {
+            printf("%d ", causal_bool_per_study_for_config[i][j]);
+	  }
+	  printf("\n");
+	}
+	printf("End causal bool per study for config\n");
+	printf("Start causal idx per study for config\n");
+        for ( int i = 0; i < num_of_studies; i++ ) {
+          for ( int j = 0; j < numCausal; j++ ) {
+            printf("%d ", causal_idx_per_study[i][j]);
+	  }
+	  printf("\n");
+	}
+	printf("End idx per study for config\n");
+
 	int aux_idx = 0;
 	while ( aux_idx < num_groups) { //find first not -1 entry
           if ( input_causal_locs[aux_idx] < 0 ) {
@@ -559,11 +577,27 @@ double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double
           printf("This did not work as expected\n");
 	  exit(1);
 	}
+	printf("Start causal bool per study for config\n");
+        for ( int i = 0; i < num_of_studies; i++ ) {
+          for ( int j = 0; j < numCausal; j++ ) {
+            printf("%d ", causal_bool_per_study_for_config[i][j]);
+	  }
+	  printf("\n");
+	}
+	printf("End causal bool per study for config\n");
+	printf("Start causal idx per study for config\n");
+        for ( int i = 0; i < num_of_studies; i++ ) {
+          for ( int j = 0; j < numCausal; j++ ) {
+            printf("%d ", causal_idx_per_study[i][j]);
+	  }
+	  printf("\n");
+	}
+	printf("End idx per study for config\n");
 
         double tmp_likelihood = 0;
         mat sigmaC = construct_diagC(config, numCausal, causal_idx_per_study, causal_bool_per_study_for_config);
-        //printf("sigma C\n");
-	//sigmaC.print(std::cout);
+        printf("sigma C\n");
+	sigmaC.print(std::cout);
 
         if ( haslowrank == true ) {
            mycount += 1;
@@ -578,8 +612,8 @@ double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double
         sumLikelihood = addlogSpace(sumLikelihood, tmp_likelihood);
 	//printf("sumLikelihood is %f\n", sumLikelihood);
  
-	//printf("likelihood is %f\n", tmp_likelihood);
-	//printf("exp likelihood is %f\n", exp(tmp_likelihood));
+	printf("likelihood is %f\n", tmp_likelihood);
+	printf("exp likelihood is %f\n", exp(tmp_likelihood));
 
         for ( int w = 0; w < num_of_studies; w++ ) {
 	  bool allZero = true;
@@ -590,7 +624,7 @@ double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double
 	    }
 	  }
 	  if ( allZero ) {
-	    //printf("no causal in study %d\n", w);
+	    printf("no causal in study %d\n", w);
             noCausal[w] = addlogSpace(noCausal[w], tmp_likelihood);
 	  }
 	}
@@ -604,7 +638,7 @@ double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double
 	     }
 	   }
 	   if ( sharedCausal ) {
-             //printf("shared causal\n");
+             printf("shared causal\n");
              sharedPips[causal_locs[g]] =  addlogSpace(sharedPips[causal_locs[g]], tmp_likelihood);
 	     //printf("shared pip = %f", sharedPips[causal_locs[g]]);
 	   }
@@ -755,8 +789,8 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 	  causal_bool_per_study[i] = new int[3];
 	}
 	for ( int i = 0; i < num_of_studies; i++ ) {
-	  memset(causal_idx_per_study, 0, 3);
-	  memset(causal_bool_per_study, 0, 3);
+	  memset(causal_idx_per_study, 0, 3 * sizeof(int));
+	  memset(causal_bool_per_study, 0, 3 * sizeof(int));
 	}
 	//int causal_idx_per_study[2][3]; //2 = num of studies, 3 = max causal TODO this is hardcoded for now
 	//int causal_bool_per_study[2][3]; 
@@ -818,7 +852,9 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 	  for ( int j = 0; j < num_of_studies; j++ ) {
             causal_bool_per_study_for_config[j] = new int[3];
 	  }
-	  memset(causal_bool_per_study_for_config, 0, num_of_studies * 3);
+	  for ( int j = 0; j < num_of_studies; j++ ) {
+	    memset(causal_bool_per_study_for_config[j], 0, 3 * sizeof(int));
+	  }
 	  //int causal_bool_per_study_for_config[2][3];
 	  //for ( int x = 0; x < 2; x++ ) {
 	  //  for ( int y = 0; y < 3; y++ ) {
@@ -1007,7 +1043,7 @@ vector<char> MPostCal::findOptimalSetGreedy(vector<double> * stat, double sigma_
     }
 
     for ( int i = 0; i < totalSnpCount; i++ ) {
-      double pip = exp(postValues[i] - total_post);
+      double pip = special_exp(postValues[i], total_post);
       if ( pip > 0.05 ) {
         causalSet[i] = '1';
       }
@@ -1021,7 +1057,7 @@ vector<char> MPostCal::findOptimalSetGreedy(vector<double> * stat, double sigma_
     //output the poster to files
     for(int i = 0; i < totalSnpCount; i++) {
         //printf("%d==>%e ",i, postValues[i]/total_likelihood);
-        items.push_back(data(exp(postValues[i]-total_post), i, 0));
+        items.push_back(data(exp(postValues[i]- total_post), i, 0));
     }
     printf("\n");
     int start_offset = 0;
@@ -1063,10 +1099,10 @@ vector<char> MPostCal::findOptimalSetGreedy(vector<double> * stat, double sigma_
       double rho = double(0);
       int index = 0;
       while(rho < inputRho){
-        rho += exp(postValues[(*rank)[start_offset+index]]-total_post);
-        if(exp(postValues[(*rank)[start_offset+index]]-total_post) > threshold){
+        rho += special_exp(postValues[(*rank)[start_offset+index]], total_post);
+        if(special_exp(postValues[(*rank)[start_offset+index]], total_post) > threshold){
             //causalSet[(*rank)[start_offset+index]] = '1';
-	    double pip = exp(postValues[start_offset+index]-total_post);
+	    double pip = special_exp(postValues[start_offset+index], total_post);
 	    if (pip > 0.01) {
             printf("%d %f\n", start_offset+index, pip);
 	    }

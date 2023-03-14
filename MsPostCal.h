@@ -203,6 +203,14 @@ public:
     void printHist2File(string fileName) {
         exportVector2File(fileName, histValues, maxCausalSNP+1);
     }
+    
+    double special_exp(double post, double total) {
+      if ( post == 0 ) {
+        return 0;
+      } else {
+        return exp(post - total);
+      }
+    }
 
     /*
      print to the .post file as well as no causal
@@ -224,7 +232,7 @@ public:
           outputFile << "SNP_ID\tProb_in_pCausalSet" << endl;
           int j = 0;
           for(int i = start_offset; i < end_offset; i++) {
-            outputFile << (*SNP_NAME)[s][j] << "\t" << exp(postValues[i]-total_post)  << endl; 
+            outputFile << (*SNP_NAME)[s][j] << "\t" << special_exp(postValues[i], total_post)  << endl; 
 	    j += 1;
           }
 	  start_offset = end_offset;
@@ -237,7 +245,7 @@ public:
 	string outFileNameSet = string(fileName)+"_nocausal.txt";
         outputFile.open(outFileNameSet.c_str());
         for ( int s = 0; s < num_of_studies; s++ ) {
-          outputFile << exp(noCausal[s]-total_post) << endl;
+          outputFile << special_exp(noCausal[s], total_post) << endl;
         }
         outputFile.close();
 
@@ -245,11 +253,7 @@ public:
 	outputFile.open(outFileNameShared.c_str());
 	outputFile << "SNP_ID\tshared_pip" << endl;
 	for ( int i = 0; i < unionSnpCount; i++ ) {
-          if (sharedPips[i] == 0) {
-            outputFile << all_snp_pos[i] << "\t" << 0 << endl;
-	  } else {
-          outputFile << all_snp_pos[i] << "\t" << exp(sharedPips[i]-total_post) << endl;
-	  }
+          outputFile << all_snp_pos[i] << "\t" << special_exp(sharedPips[i],total_post) << endl;
 	}
 	outputFile.close();
 
