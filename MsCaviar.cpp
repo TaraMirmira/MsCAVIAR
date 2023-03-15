@@ -88,7 +88,6 @@ int main( int argc, char *argv[]  ){
 
     while ((oc = getopt(argc, argv, "vhl:o:z:m:p:r:c:k:g:f:t:s:n:a:b:d:e:x")) != -1) {
 	    //TODO P3 last char in this colon separated list does not work, optarg comes in as null. -x is dummy flag. Should it be :x: (colon at end)?
-	    printf("Hello world\n");
 	if ( (optarg == NULL) || (*optarg == '\0') ) {
           printf("optarg is NULL\n");
 	  exit(1);

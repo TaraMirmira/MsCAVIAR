@@ -789,8 +789,8 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 	  causal_bool_per_study[i] = new int[3];
 	}
 	for ( int i = 0; i < num_of_studies; i++ ) {
-	  memset(causal_idx_per_study, 0, 3 * sizeof(int));
-	  memset(causal_bool_per_study, 0, 3 * sizeof(int));
+	  memset(causal_idx_per_study[i], 0, 3 * sizeof(int));
+	  memset(causal_bool_per_study[i], 0, 3 * sizeof(int));
 	}
 	//int causal_idx_per_study[2][3]; //2 = num of studies, 3 = max causal TODO this is hardcoded for now
 	//int causal_bool_per_study[2][3]; 
@@ -832,10 +832,6 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 	}*/
 
 	int total_num_additional_configs = 0;
-        int num_additional_configs[3]; //TODO hardcoded for now as max size of 3 because max causal is 3
-	for ( int i = 0; i < 3; i++ ) {
-          num_additional_configs[i] = 0; //zero out
-	}
         for ( int i = 0; i < numCausal; i++ ) {
 	    for ( int j = 0; j < num_of_studies; j++ ) {
                 if ( causal_bool_per_study[j][i] == 1 ) {

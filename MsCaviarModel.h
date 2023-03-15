@@ -289,6 +289,7 @@ public:
         delete snpNames;
         delete pcausalSet;
         delete rank;
+	//TODO need to delete BIG SIGMA
     }
 };
 
