@@ -425,7 +425,8 @@ double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double
       printf("mmap did not succeed\n");
       exit(1);
     }
-    if ((num_configs * num_groups * sizeof(int)) != size_configs_file) {
+    if ((num_configs * num_groups * sizeof(int16_t)) != size_configs_file) {
+      printf("config file is not the expected size\n");
       exit(1);
     }
 
@@ -433,7 +434,7 @@ double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double
     //#pragma omp parallel for schedule(static,chunksize) private(configure)
     #pragma omp parallel for
     for(long int cidx = 0; cidx < num_configs; cidx++) {
-	int * input_causal_locs = (int *) (configs + (cidx * num_groups * sizeof(int))); //offset for (cidx)th config 
+	int16_t * input_causal_locs = (int16_t *) (configs + (cidx * num_groups * sizeof(int16_t))); //offset for (cidx)th config 
 
         vector<int> config(totalSnpCount, 0);
 	int numCausal = 0;
