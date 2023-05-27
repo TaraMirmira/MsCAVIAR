@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <chrono>
 
 #include <armadillo>
 
@@ -168,13 +169,19 @@ public:
         for (int i = 0; i < sigma->size(); i++){
             //check for low rank
             //if(arma::rank(sigma->at(i)) < snpCount){
+	    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
             if(arma::rank(sigma->at(i)) < num_snps_all[i]){
+		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+		std::cout << "Time to check rank = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
                 haslowrank = true;
                 std::cout << "study " << i << " has low rank. Implementing low_rank method.\n";
             }
             
             //makeSigmaPositiveSemiDefinite(&(sigma->at(i)), snpCount);
+	    begin = std::chrono::steady_clock::now();
             makeSigmaPositiveSemiDefinite(&(sigma->at(i)), num_snps_all[i]);
+	    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+	    std::cout << "Time to make psd = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
         }
 
         //mat* BIG_SIGMA = new mat(snpCount * num_of_studies, snpCount * num_of_studies, fill::zeros);
@@ -199,7 +206,10 @@ public:
                 //*tmpmat = BIG_SIGMA->submat(i*snpCount,i*snpCount,(i+1)*snpCount-1,(i+1)*snpCount-1);                
                 *tmpmat = BIG_SIGMA->submat(sum_msubj_until_i, sum_msubj_until_i, sum_msubj_until_i+num_snps_all[i]-1, sum_msubj_until_i+num_snps_all[i]-1);
                 mat* tmpOmega = new mat(num_snps_all[i],num_snps_all[i],fill::zeros);
+		std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
                 tmpOmega = eigen_decomp(tmpmat,num_snps_all[i]);
+		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+		std::cout << "Time for eigen decomp = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
 
                 *tmpOmega = abs(*tmpOmega);
 

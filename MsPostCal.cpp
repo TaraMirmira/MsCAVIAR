@@ -12,6 +12,7 @@
 #include <sys/mman.h>
 #include <omp.h>
 #include <ctime>
+#include <chrono>
 
 using namespace arma;
 
@@ -46,10 +47,12 @@ double MPostCal::log_prior(vector<int> configure, int numCausal, int **causal_bo
     if (causal_bool_per_study[0][i] == 1 or causal_bool_per_study[1][i] == 1 ) {
       p_of_c += log(gamma);
       num_1_in_either += 1;
+      //printf("causal snp\n");
     } 
   }
   p_of_c += ( unionSnpCount - num_1_in_either ) * log(1 - gamma);
-//  printf("prior is %f\n", p_of_c);
+  //printf("num not causal snp = %d\n", unionSnpCount - num_1_in_either);
+  //printf("prior is %f\n", p_of_c);
   //printf("num of 1 in either is %d\n", num_1_in_either);
   
   return p_of_c;
@@ -393,6 +396,7 @@ vector<int> MPostCal::constructConfig(vector<int> input_causal_locs) {
 
 
 double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double sigma_g_squared) {
+	printf("Input configs given\n");
     double sumLikelihood = 0;
     long int total_iteration = 0 ;
     int mycount = 0;
@@ -434,6 +438,9 @@ double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double
     //#pragma omp parallel for schedule(static,chunksize) private(configure)
     #pragma omp parallel for
     for(long int cidx = 0; cidx < num_configs; cidx++) {
+
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
 	int16_t * input_causal_locs = (int16_t *) (configs + (cidx * num_groups * sizeof(int16_t))); //offset for (cidx)th config 
 
         vector<int> config(totalSnpCount, 0);
@@ -444,7 +451,7 @@ double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double
 	    numCausal += 1;
           }
         }
-	printVec(config);
+	//printVec(config);
 
 
         if ( numCausal == 0 ) { //if no causal, just update sum likelihood, nothing else should change
@@ -516,7 +523,7 @@ double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double
 	  memset(causal_idx_per_study[i], 0, numCausal * sizeof(int));
 	}
 
-	printf("Start causal bool per study for config\n");
+	/*printf("Start causal bool per study for config\n");
         for ( int i = 0; i < num_of_studies; i++ ) {
           for ( int j = 0; j < numCausal; j++ ) {
             printf("%d ", causal_bool_per_study_for_config[i][j]);
@@ -532,6 +539,7 @@ double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double
 	  printf("\n");
 	}
 	printf("End idx per study for config\n");
+	*/
 
 	int aux_idx = 0;
 	while ( aux_idx < num_groups) { //find first not -1 entry
@@ -578,6 +586,8 @@ double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double
           printf("This did not work as expected\n");
 	  exit(1);
 	}
+	
+	/*
 	printf("Start causal bool per study for config\n");
         for ( int i = 0; i < num_of_studies; i++ ) {
           for ( int j = 0; j < numCausal; j++ ) {
@@ -594,27 +604,35 @@ double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double
 	  printf("\n");
 	}
 	printf("End idx per study for config\n");
+	*/
 
         double tmp_likelihood = 0;
+	double just_ll = 0;
+	double just_prior = 0;
         mat sigmaC = construct_diagC(config, numCausal, causal_idx_per_study, causal_bool_per_study_for_config);
-        printf("sigma C\n");
-	sigmaC.print(std::cout);
+        //printf("sigma C\n");
+	//sigmaC.print(std::cout);
 
         if ( haslowrank == true ) {
            mycount += 1;
-           tmp_likelihood = lowrank_likelihood(config, stat, sigma_g_squared, sigmaC) + log_prior(config, numCausal, causal_bool_per_study_for_config); 
+	   just_prior = 
+           just_ll = lowrank_likelihood(config, stat, sigma_g_squared, sigmaC);
+           just_prior =  log_prior(config, numCausal, causal_bool_per_study_for_config); 
+           tmp_likelihood = just_ll + just_prior;
            }
         else {
            mycount += 1;
-           tmp_likelihood = likelihood(config, stat, sigma_g_squared, sigmaC) + log_prior(config, numCausal, causal_bool_per_study_for_config);
+           just_ll = likelihood(config, stat, sigma_g_squared, sigmaC);
+           just_prior = log_prior(config, numCausal, causal_bool_per_study_for_config);
+           tmp_likelihood = just_ll + just_prior;
            }
         
         #pragma omp critical
         sumLikelihood = addlogSpace(sumLikelihood, tmp_likelihood);
 	//printf("sumLikelihood is %f\n", sumLikelihood);
  
-	printf("likelihood is %f\n", tmp_likelihood);
-	printf("exp likelihood is %f\n", exp(tmp_likelihood));
+	//printf("likelihood is %f\n", tmp_likelihood);
+	//printf("exp likelihood is %f\n", exp(tmp_likelihood));
 
         for ( int w = 0; w < num_of_studies; w++ ) {
 	  bool allZero = true;
@@ -625,7 +643,7 @@ double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double
 	    }
 	  }
 	  if ( allZero ) {
-	    printf("no causal in study %d\n", w);
+	    //printf("no causal in study %d\n", w);
             noCausal[w] = addlogSpace(noCausal[w], tmp_likelihood);
 	  }
 	}
@@ -639,9 +657,12 @@ double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double
 	     }
 	   }
 	   if ( sharedCausal ) {
-             printf("shared causal\n");
+             //printf("shared causal\n");
              sharedPips[causal_locs[g]] =  addlogSpace(sharedPips[causal_locs[g]], tmp_likelihood);
+	     sharedLL[causal_locs[g]] = addlogSpace(sharedLL[causal_locs[g]], just_ll);
 	     //printf("shared pip = %f", sharedPips[causal_locs[g]]);
+	   } else {
+             notSharedLL[causal_locs[g]] = addlogSpace(notSharedLL[causal_locs[g]], just_ll);
 	   }
 	 }
 
@@ -670,6 +691,10 @@ double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double
             cerr << "\r                                                                 \r" << (double) (cidx) / (double) num_configs * 100.0 << "%";
             curr_iter = cidx;
         }
+	if(cidx % 1000 == 0 ){
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        //std::cout << "Time to eval config = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+	}
     }
 
     //cout << "\ncomputing likelihood of all configurations took  " << (float)(clock()-start)/CLOCKS_PER_SEC << "seconds.\n";
@@ -793,14 +818,7 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 	  memset(causal_idx_per_study[i], 0, 3 * sizeof(int));
 	  memset(causal_bool_per_study[i], 0, 3 * sizeof(int));
 	}
-	//int causal_idx_per_study[2][3]; //2 = num of studies, 3 = max causal TODO this is hardcoded for now
-	//int causal_bool_per_study[2][3]; 
-	//for ( int i = 0; i < 2; i ++ ) {
-        //  for ( int j = 0; j < 3; j++ ) {
-        //    causal_idx_per_study[i][j] = 0; //zero out
-	//    causal_bool_per_study[i][j] = 0; //zero out
-	//  }
-	//}
+
 	for ( int i = 0; i < num_of_studies; i++ ) {
             for ( int j = 0; j < numCausal; j++ ) {
 		int loc_in_studyi = idx_to_snp_map[i][causal_locs[j]];
@@ -852,12 +870,7 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 	  for ( int j = 0; j < num_of_studies; j++ ) {
 	    memset(causal_bool_per_study_for_config[j], 0, 3 * sizeof(int));
 	  }
-	  //int causal_bool_per_study_for_config[2][3];
-	  //for ( int x = 0; x < 2; x++ ) {
-	  //  for ( int y = 0; y < 3; y++ ) {
-          //    causal_bool_per_study_for_config[x][y] = 0; //zero out
-	  //  }
-	  //}
+
 	  int bmask = i+1;
 	  vector<int> nextConfigure(totalSnpCount, 0); 
           for ( int j = 0; j < numCausal; j++ ) {
@@ -892,17 +905,23 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 	  //printf("next config to eval\n");
 	  //printVec(nextConfigure);
           double tmp_likelihood = 0;
+	  double just_ll = 0;
+	  double just_prior = 0;
           mat sigmaC = construct_diagC(nextConfigure, numCausal, causal_idx_per_study, causal_bool_per_study_for_config);
           //printf("sigma C\n");
 	  //sigmaC.print(std::cout);
 
           if ( haslowrank == true ) {
              mycount += 1;
-             tmp_likelihood = lowrank_likelihood(nextConfigure, stat, sigma_g_squared, sigmaC) + log_prior(nextConfigure, numCausal, causal_bool_per_study_for_config); 
+             just_ll = lowrank_likelihood(nextConfigure, stat, sigma_g_squared, sigmaC); 
+             just_prior = log_prior(nextConfigure, numCausal, causal_bool_per_study_for_config); 
+             tmp_likelihood = just_ll + just_prior;
              }
           else {
              mycount += 1;
-             tmp_likelihood = likelihood(nextConfigure, stat, sigma_g_squared, sigmaC) + log_prior(nextConfigure, numCausal, causal_bool_per_study_for_config);
+             just_ll = likelihood(nextConfigure, stat, sigma_g_squared, sigmaC);
+             just_prior = log_prior(nextConfigure, numCausal, causal_bool_per_study_for_config);
+             tmp_likelihood = just_ll + just_prior;
              }
         
          #pragma omp critical
@@ -937,7 +956,10 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 	   if ( sharedCausal ) {
              //printf("shared causal\n");
              sharedPips[causal_locs[g]] =  addlogSpace(sharedPips[causal_locs[g]], tmp_likelihood);
+	     sharedLL[causal_locs[g]] = addlogSpace(sharedLL[causal_locs[g]], just_ll);
 	     //printf("shared pip = %f", sharedPips[causal_locs[g]]);
+	   } else {
+             notSharedLL[causal_locs[g]] = addlogSpace(notSharedLL[causal_locs[g]], just_ll);
 	   }
 	 }
 
