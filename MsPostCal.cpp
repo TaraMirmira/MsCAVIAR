@@ -31,11 +31,11 @@ double MPostCal::log_prior(vector<int> configure, int numCausal, int **causal_bo
           p_of_c += log(sharing_param);
  	  //printf("shared causal\n");
           } else {
-          cout << "This case in prior should not happen\n";
+          cout << "This case in prior should not happen\n"; //this is the all zeros case
 	  exit(1);
         }
       } else {
-        p_of_c += log(1-sharing_param);
+        p_of_c += log((1-sharing_param)*0.5); //0.5 adjustment for 2 studies bc not shared causal has two possibilities
 	//printf("not shared causal\n");
       }
     }
@@ -677,6 +677,11 @@ double MPostCal::computeTotalLikelihoodGivenConfigs(vector<double>* stat, double
 		//}
                 //}
          }        
+	 //printf("post values\n");
+	 //for ( int f = 0; f < totalSnpCount; f++ ) {
+         //  printf("%f ", postValues[f]);
+	 //}
+	 //printf("\n");
 
 	 for(int i = 0; i < num_of_studies; ++i) {
            delete[] causal_bool_per_study_for_config[i];
@@ -974,7 +979,13 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 		//}
                 //}
          }        
+	//printf("post values\n");
+	//for ( int f = 0; f < totalSnpCount; f++) {
+        //  printf("%f ", postValues[f]);
+	//}
+	//printf("\n");
        }
+
 
 	for(int i = 0; i < num_of_studies; ++i) {
            delete[] causal_idx_per_study[i];
@@ -1054,6 +1065,7 @@ vector<char> MPostCal::findOptimalSetGreedy(vector<double> * stat, double sigma_
     }
     printf("\nTotal Likelihood = %e SNP=%d \n", total_post, totalSnpCount);
     total_post = totalLikeLihoodLOG;
+    printf("total post as total likelihood log = %f\n", total_post);
 
 
     for ( int i = 0; i < num_of_studies; i++ ) {
@@ -1074,9 +1086,11 @@ vector<char> MPostCal::findOptimalSetGreedy(vector<double> * stat, double sigma_
     std::vector<data> items;
     std::set<int>::iterator it;
     //output the poster to files
+    //printf("posteriors\n");
     for(int i = 0; i < totalSnpCount; i++) {
         //printf("%d==>%e ",i, postValues[i]/total_likelihood);
         items.push_back(data(exp(postValues[i]- total_post), i, 0));
+        //printf("%f ", exp(postValues[i]- total_post));
     }
     printf("\n");
     int start_offset = 0;
