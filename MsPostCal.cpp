@@ -741,11 +741,32 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
     }
     int curr_iter = 0;
 
+    
+    int nP = omp_get_num_procs();
+    printf("num procs = %d\n", nP);
+    printf("max num procs = %d\n", omp_get_max_threads());
+    printf("num threads = %d\n", omp_get_num_threads());
+    omp_set_num_threads(nP);
+    int*** thread_mem_idx = (int***)malloc(nP * sizeof(int**));
+    int*** thread_mem_bool = (int***)malloc(nP * sizeof(int**));
+    int*** thread_mem_bool_for_config = (int***)malloc(nP * sizeof(int**));
+    for ( int b = 0; b < nP; b++ ) {
+      thread_mem_idx[b] = (int**)malloc(num_of_studies * sizeof(int*));
+      thread_mem_bool[b] = (int**)malloc(num_of_studies * sizeof(int*));
+      thread_mem_bool_for_config[b] = (int**)malloc(num_of_studies * sizeof(int*));
+      for ( int q = 0; q < num_of_studies; q++ ) {
+        thread_mem_idx[b][q] = (int*)malloc(3 * sizeof(int));
+        thread_mem_bool[b][q] = (int*)malloc(3 * sizeof(int));
+        thread_mem_bool_for_config[b][q] = (int*)malloc(3 * sizeof(int));
+      }
+    }
+    
+
 
     #pragma omp parallel for schedule(static,chunksize) private(configure,num)
-    for(long int i = 0; i < total_iteration; i++) {
-        if(i%chunksize == 0){
-            configure = findConfig(i);
+    for(long int iter = 0; iter < total_iteration; iter++) {
+        if(iter%chunksize == 0){
+            configure = findConfig(iter);
         }
         else{
             //num = nextBinary(configure, snpCount);
@@ -812,16 +833,27 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 	//printf("total snp count is: %d\n", totalSnpCount);
         vector<int> startConfigure(totalSnpCount, 0);
 
-
+	/*
 	int** causal_idx_per_study = new int*[num_of_studies];
 	int** causal_bool_per_study = new int*[num_of_studies];
+	int** causal_bool_per_study_for_config = new int*[num_of_studies];
 	for ( int i = 0; i < num_of_studies; i++ ) { //3 is hardcoded as max causal for now
 	  causal_idx_per_study[i] = new int[3];
 	  causal_bool_per_study[i] = new int[3];
+	  causal_bool_per_study_for_config[i] = new int[3];
 	}
+	*/
+	int pid = omp_get_thread_num();
+	if ((pid < 0) || (pid >= nP)) {
+          cout << "Invalid PID\n" << endl;
+          exit(1); // terminate with error
+        }
+	int** causal_idx_per_study = thread_mem_idx[pid];
+	int** causal_bool_per_study = thread_mem_bool[pid];
 	for ( int i = 0; i < num_of_studies; i++ ) {
 	  memset(causal_idx_per_study[i], 0, 3 * sizeof(int));
 	  memset(causal_bool_per_study[i], 0, 3 * sizeof(int));
+	  //memset(causal_bool_per_study_for_config[i], 0, 3 * sizeof(int));
 	}
 
 	for ( int i = 0; i < num_of_studies; i++ ) {
@@ -868,13 +900,25 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
 
 
 	for ( int i = 0; i < total_num_additional_configs; i++ ) {
-          int **causal_bool_per_study_for_config = new int*[num_of_studies];
+	  //int pid = omp_get_thread_num();
+	  //if ( ( pid < 0 ) || ( pid >= nP ) ) { printf("BAD PID\n"); }
+	  int **causal_bool_per_study_for_config = thread_mem_bool_for_config[pid];
 	  for ( int j = 0; j < num_of_studies; j++ ) {
-            causal_bool_per_study_for_config[j] = new int[3];
+	    memset(causal_bool_per_study_for_config[j], 0, 3 * sizeof(int));
+	  }
+		/*
+          //int **causal_bool_per_study_for_config = new int*[num_of_studies];
+	  int** causal_bool_per_study_for_config = (int**)malloc(num_of_studies * sizeof(int*));
+	  if (causal_bool_per_study_for_config == nullptr) {printf("alloc error\n");}
+	  for ( int j = 0; j < num_of_studies; j++ ) {
+            //causal_bool_per_study_for_config[j] = new int[3];
+	    causal_bool_per_study_for_config[j] = (int*)malloc(3 * sizeof(int));
+	    if (causal_bool_per_study_for_config[j] == nullptr) {printf("alloc error\n");}
 	  }
 	  for ( int j = 0; j < num_of_studies; j++ ) {
 	    memset(causal_bool_per_study_for_config[j], 0, 3 * sizeof(int));
 	  }
+	  */
 
 	  int bmask = i+1;
 	  vector<int> nextConfigure(totalSnpCount, 0); 
@@ -984,24 +1028,52 @@ double MPostCal::computeTotalLikelihood(vector<double>* stat, double sigma_g_squ
         //  printf("%f ", postValues[f]);
 	//}
 	//printf("\n");
+	 /*
+	 for ( int j = 0; j < num_of_studies; j++ ) {
+           //delete[] causal_bool_per_study_for_config[j];
+           free(causal_bool_per_study_for_config[j]);
+	 }
+	 //delete[] causal_bool_per_study_for_config;
+	 free(causal_bool_per_study_for_config);
+	 */
        }
 
-
+	/*
 	for(int i = 0; i < num_of_studies; ++i) {
            delete[] causal_idx_per_study[i];
            delete[] causal_bool_per_study[i];
+           delete[] causal_bool_per_study_for_config[i];
          }
          //Free the array of pointers
          delete[] causal_idx_per_study;
          delete[] causal_bool_per_study;
-
+         delete[] causal_bool_per_study_for_config;
+	*/
 
         #pragma omp critical
-        if(i % 1000 == 0 and i > curr_iter){
-            cerr << "\r                                                                 \r" << (double) (i) / (double) total_iteration * 100.0 << "%";
-            curr_iter = i;
+        if(iter % 1000 == 0 and iter > curr_iter){
+            cerr << "\r                                                                 \r" << (double) (iter) / (double) total_iteration * 100.0 << "%";
+            curr_iter = iter;
         }
     }
+
+    omp_set_num_threads(1);
+
+    
+    for ( int i = 0; i < nP; i++ ) {
+      for ( int j = 0; j < num_of_studies; j++ ) {
+        free(thread_mem_idx[i][j]);
+        free(thread_mem_bool[i][j]);
+        free(thread_mem_bool_for_config[i][j]);
+      }
+      free(thread_mem_idx[i]);
+      free(thread_mem_bool[i]);
+      free(thread_mem_bool_for_config[i]);
+    }
+    free(thread_mem_idx);
+    free(thread_mem_bool);
+    free(thread_mem_bool_for_config);
+    
 
     //cout << "\ncomputing likelihood of all configurations took  " << (float)(clock()-start)/CLOCKS_PER_SEC << "seconds.\n";
 

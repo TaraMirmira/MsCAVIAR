@@ -197,6 +197,7 @@ public:
         }
         
         //if low rank, BIG_SIGMA = BIG_B, Stat matrix has new distribution
+	omp_set_num_threads(1);
         if(haslowrank == true){
             //construct big B
             mat* BIG_B = new mat(num_total_snps, num_total_snps, fill::zeros);
@@ -231,7 +232,10 @@ public:
                     (*z_score)(j,0) = S_LONG_VEC[sum_msubj_until_i+j]; //msubj the j does not correspond to j in this for loop, it is just an idx
                 }
 
+		int nT = omp_get_num_procs();
+		omp_set_num_threads(1);
                 mat tmpS = inv(sqrt_Omega) * trans_Q;
+		//omp_set_num_threads(nT);
                 mat lowS = tmpS * (*z_score);
 
                 for(int j = 0; j < num_snps_all[i]; j++){
@@ -242,6 +246,7 @@ public:
                 delete(z_score);
             }
 
+	    //delete(BIG_SIGMA);
             *BIG_SIGMA = *BIG_B;
             delete(BIG_B);
         }

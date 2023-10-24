@@ -135,8 +135,11 @@ public:
         }
         */
 
+	//int nT = omp_get_num_procs();
+	//omp_set_num_threads(1);
         invSigmaMatrix = inv(sigmaMatrix);
         sigmaDet       = det(sigmaMatrix);
+	//omp_set_num_threads(nT);
 
     }
 

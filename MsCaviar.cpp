@@ -209,7 +209,8 @@ int main( int argc, char *argv[]  ){
     if (ldDir.size() != zDir.size() || ldDir.size() != sample_sizes.size()) {
         cout << "Error: LD files, Z files, and sample sizes do not match in number" << endl;
         exit(1);
-    }
+    }  
+    omp_set_num_threads(1);
 
     MCaviarModel Mcaviar(ldDir, zDir, snpMapFile, configsFile, num_configs, num_groups, sample_sizes, num_causal, outputFileName, finalTotalCausalSNP, sharing_param, rho, histFlag, gamma, tau_sqr, sigma_g_squared, cutoff_threshold);
     Mcaviar.run();
